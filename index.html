@@ -974,13 +974,21 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.1.0';
+  var VERSAO = '3.1.1';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.1.1',
+      data: '2026-09-05',
+      itens: [
+        'Os botões de login social agora só aparecem quando o provedor está mesmo ligado no servidor.',
+        'Antes, tocar no Google levava a uma página de erro em JSON quando ele não estava habilitado.'
+      ]
+    },
     {
       versao: '3.1.0',
       data: '2026-09-05',
@@ -1757,6 +1765,22 @@
 
   function nuvemEnderecoRetorno() {
     return location.origin + location.pathname;
+  }
+
+  // O servidor diz quais logins sociais estão ligados. Sem isso o app
+  // mandaria a pessoa para uma página de erro em JSON.
+  var provedoresLigados = null;
+
+  function carregarProvedores() {
+    if (!NUVEM.ligada || provedoresLigados) return;
+    pedirNuvem('/auth/v1/settings', { token: false }).then(function (r) {
+      var ext = (r && r.external) || {};
+      provedoresLigados = { google: !!ext.google, apple: !!ext.apple, facebook: !!ext.facebook };
+    }).catch(function () {
+      provedoresLigados = { google: false, apple: false, facebook: false };
+    }).then(function () {
+      if (!$('entrada').classList.contains('escondida')) montarEntrada();
+    });
   }
 
   function nuvemEntrarComGoogle() {
@@ -2667,6 +2691,7 @@
 
   function mostrarEntrada(qual) {
     telaEntrada = qual || 'abertura';
+    carregarProvedores();
     $('entrada').classList.remove('escondida');
     document.body.style.overflow = 'hidden';
     montarEntrada();
@@ -2722,11 +2747,20 @@
       avisar('Entrar com Google, Apple ou Facebook precisa do servidor ligado.');
       return;
     }
+    if (!provedoresLigados || !provedoresLigados[provedor]) {
+      avisar('Esse login ainda não está habilitado no servidor.');
+      return;
+    }
     if (provedor !== 'google') {
-      avisar('Por enquanto só o Google está ligado no servidor.');
+      avisar('Por enquanto só o Google está ligado no aplicativo.');
       return;
     }
     nuvemEntrarComGoogle();
+  }
+
+  function algumProvedorLigado() {
+    return !!(provedoresLigados &&
+      (provedoresLigados.google || provedoresLigados.apple || provedoresLigados.facebook));
   }
 
   function botaoSocial(rotulo, logo, provedor) {
@@ -2804,19 +2838,14 @@
     entrar.appendChild(no('span', null, 'Entrar na minha conta'));
     fundo.appendChild(entrar);
 
-    fundo.appendChild(no('div', 'separador', 'ou continue com'));
-
-    var sociais = no('div', 'sociais-linha');
-    sociais.appendChild(botaoSocial('Continuar com Google', logoGoogle(), 'google'));
-    sociais.appendChild(botaoSocial('Continuar com Apple', logoApple(), 'apple'));
-    sociais.appendChild(botaoSocial('Continuar com Facebook', logoFacebook(), 'facebook'));
-    fundo.appendChild(sociais);
-
-    var nota = no('p', 'termos', NUVEM.ligada
-      ? 'Apple e Facebook ainda não estão ligados no servidor.'
-      : 'Login social chega quando o servidor estiver ligado.');
-    nota.style.marginTop = '10px';
-    fundo.appendChild(nota);
+    if (algumProvedorLigado()) {
+      fundo.appendChild(no('div', 'separador', 'ou continue com'));
+      var sociais = no('div', 'sociais-linha');
+      if (provedoresLigados.google) sociais.appendChild(botaoSocial('Continuar com Google', logoGoogle(), 'google'));
+      if (provedoresLigados.apple) sociais.appendChild(botaoSocial('Continuar com Apple', logoApple(), 'apple'));
+      if (provedoresLigados.facebook) sociais.appendChild(botaoSocial('Continuar com Facebook', logoFacebook(), 'facebook'));
+      fundo.appendChild(sociais);
+    }
 
     var termos = no('p', 'termos');
     termos.appendChild(document.createTextNode('Ao continuar, você concorda com os '));
@@ -2931,15 +2960,18 @@
     });
     forma.appendChild(entrar);
 
-    forma.appendChild(no('div', 'separador', 'ou continue com'));
-    var redondas = no('div', 'sociais-redondas');
-    [[logoGoogle(), 'google'], [logoApple(), 'apple'], [logoFacebook(), 'facebook']].forEach(function (par) {
-      var b = botao('social-redonda', null, function () { acionarSocial(par[1]); });
-      b.setAttribute('aria-label', 'Entrar com ' + par[1]);
-      b.appendChild(par[0]);
-      redondas.appendChild(b);
-    });
-    forma.appendChild(redondas);
+    if (algumProvedorLigado()) {
+      forma.appendChild(no('div', 'separador', 'ou continue com'));
+      var redondas = no('div', 'sociais-redondas');
+      [[logoGoogle(), 'google'], [logoApple(), 'apple'], [logoFacebook(), 'facebook']].forEach(function (par) {
+        if (!provedoresLigados[par[1]]) return;
+        var b = botao('social-redonda', null, function () { acionarSocial(par[1]); });
+        b.setAttribute('aria-label', 'Entrar com ' + par[1]);
+        b.appendChild(par[0]);
+        redondas.appendChild(b);
+      });
+      forma.appendChild(redondas);
+    }
 
     var rodape = no('p', 'rodape-troca');
     rodape.appendChild(document.createTextNode('Ainda não tem uma conta? '));

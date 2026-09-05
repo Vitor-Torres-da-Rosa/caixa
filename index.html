@@ -341,7 +341,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity .2s ease;
-    z-index: 50;
+    z-index: 105;
   }
   .cortina.aberta { opacity: 1; pointer-events: auto; }
 
@@ -357,7 +357,7 @@
     padding: 8px 16px calc(22px + var(--baixo));
     transform: translateY(101%);
     transition: transform .27s cubic-bezier(.32,.72,0,1);
-    z-index: 51;
+    z-index: 106;
   }
   .folha.aberta { transform: translateY(0); }
 
@@ -446,7 +446,7 @@
     color: var(--texto);
     border-radius: 13px;
     box-shadow: 0 12px 30px rgba(0,0,0,.6);
-    z-index: 70;
+    z-index: 118;
     font-size: 14px;
   }
   .aviso span { flex: 1; }
@@ -464,7 +464,7 @@
     border-radius: 999px;
     font-size: 14px;
     box-shadow: 0 10px 26px rgba(0,0,0,.5);
-    z-index: 80;
+    z-index: 120;
     opacity: 0;
     pointer-events: none;
     transition: opacity .2s ease;
@@ -507,6 +507,420 @@
   .rel-par .v { font-weight: 700; font-variant-numeric: tabular-nums; }
   .rel-nota { font-size: 12px; color: var(--fraco); margin-top: 18px; line-height: 1.6; }
 
+  /* ---------- Entrada: abertura, login e cadastro ---------- */
+
+  #entrada {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background:
+      radial-gradient(120% 62% at 50% 0%, rgba(233,180,76,.13), transparent 62%),
+      radial-gradient(90% 45% at 50% 100%, rgba(233,180,76,.07), transparent 70%),
+      #05080B;
+  }
+  #entrada.escondida { display: none; }
+
+  .ent-folha {
+    min-height: 100%;
+    max-width: 460px;
+    margin: 0 auto;
+    padding: calc(18px + var(--alto)) 24px calc(26px + var(--baixo));
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ent-voltar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #10171F;
+    border: 1px solid #222E3C;
+    color: var(--texto);
+    display: grid;
+    place-items: center;
+    font-size: 19px;
+    margin-bottom: 22px;
+    flex: 0 0 auto;
+  }
+  .ent-voltar:active { background: #172029; }
+
+  .marca-caixa { text-align: center; margin: 6px 0 4px; }
+  .marca-nome {
+    font-size: 27px;
+    font-weight: 700;
+    letter-spacing: .34em;
+    text-indent: .34em;
+    margin-top: 14px;
+  }
+  .marca-sub {
+    font-size: 9.5px;
+    letter-spacing: .3em;
+    text-indent: .3em;
+    color: #8A7442;
+    margin-top: 7px;
+    text-transform: uppercase;
+  }
+
+  .ent-titulo {
+    font-size: 34px;
+    line-height: 1.12;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    text-align: center;
+    margin: 26px 0 0;
+  }
+  .ent-titulo .ouro { color: var(--ouro); display: block; }
+  .ent-texto {
+    text-align: center;
+    color: var(--suave);
+    font-size: 14.5px;
+    line-height: 1.5;
+    margin: 12px 0 0;
+  }
+
+  .carrossel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    margin: 0 -24px;
+  }
+  .carrossel::-webkit-scrollbar { display: none; }
+  .carrossel > div {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    padding: 0 24px;
+  }
+
+  .vantagens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 26px; }
+  .vantagem { text-align: center; }
+  .vantagem .quadro {
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 10px;
+    border-radius: 15px;
+    background: linear-gradient(160deg, #17202B, #0D131A);
+    border: 1px solid #26313E;
+    display: grid;
+    place-items: center;
+    color: var(--ouro);
+  }
+  .vantagem .quadro svg { width: 24px; height: 24px; }
+  .vantagem .nome { font-size: 12.5px; font-weight: 700; }
+  .vantagem .detalhe { font-size: 11px; color: var(--fraco); line-height: 1.45; margin-top: 4px; }
+
+  .pontos { display: flex; justify-content: center; gap: 7px; margin: 22px 0 4px; }
+  .pontos i {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #2B3646;
+    transition: all .2s ease;
+  }
+  .pontos i.ativo { background: var(--ouro); width: 20px; border-radius: 999px; }
+
+  .ent-fundo { margin-top: auto; padding-top: 26px; }
+
+  .btn-dourado {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #F7D888 0%, #E9B44C 45%, #D09A32 100%);
+    color: #16202B;
+    font-size: 15.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 10px 26px rgba(233,180,76,.18);
+  }
+  .btn-dourado:active { filter: brightness(.94); }
+  .btn-dourado:disabled { opacity: .5; box-shadow: none; }
+  .btn-dourado svg { width: 19px; height: 19px; }
+
+  .btn-contorno {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    background: #0E141B;
+    border: 1px solid #26313E;
+    color: var(--texto);
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 11px;
+  }
+  .btn-contorno:active { background: #141C25; }
+  .btn-contorno svg { width: 19px; height: 19px; }
+
+  .separador {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0 14px;
+    color: var(--fraco);
+    font-size: 12.5px;
+  }
+  .separador::before, .separador::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #1E2836;
+  }
+
+  .sociais-linha { display: flex; flex-direction: column; gap: 10px; }
+  .social {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    background: #0E141B;
+    border: 1px solid #26313E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+  .social:active { background: #141C25; }
+  .social svg { width: 20px; height: 20px; flex: 0 0 auto; }
+
+  .sociais-redondas { display: flex; justify-content: center; gap: 16px; }
+  .social-redonda {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #0E141B;
+    border: 1px solid #26313E;
+    display: grid;
+    place-items: center;
+  }
+  .social-redonda:active { background: #141C25; }
+  .social-redonda svg { width: 24px; height: 24px; }
+
+  .termos {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--fraco);
+    line-height: 1.6;
+    margin-top: 18px;
+  }
+  .termos button { color: var(--ouro); font-weight: 600; font-size: 11.5px; }
+
+  .ent-campo {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    background: #0D131A;
+    border: 1px solid #212C39;
+    border-radius: 14px;
+    padding: 0 14px;
+    margin-bottom: 12px;
+  }
+  .ent-campo:focus-within { border-color: var(--ouro); }
+  .ent-campo .icone { color: var(--fraco); display: grid; place-items: center; }
+  .ent-campo .icone svg { width: 19px; height: 19px; }
+  .ent-campo input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: none;
+    outline: none;
+    padding: 15px 0;
+    font-size: 15px;
+  }
+  .ent-campo .olho { color: var(--fraco); padding: 8px; margin-right: -8px; }
+  .ent-campo .olho svg { width: 19px; height: 19px; display: block; }
+
+  .ent-linha-meio {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 4px 0 20px;
+    font-size: 13.5px;
+  }
+  .lembrar { display: flex; align-items: center; gap: 9px; color: var(--suave); }
+  .caixinha {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid #2E3A49;
+    display: grid;
+    place-items: center;
+    color: #16202B;
+    font-size: 13px;
+    font-weight: 700;
+    flex: 0 0 auto;
+  }
+  .lembrar[aria-pressed="true"] .caixinha { background: var(--ouro); border-color: var(--ouro); }
+  .elo { color: var(--ouro); font-weight: 600; font-size: 13.5px; }
+
+  .passos { display: flex; align-items: flex-start; margin: 22px 0 24px; }
+  .passo { flex: 1; text-align: center; position: relative; }
+  .passo .bola {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    margin: 0 auto 7px;
+    display: grid;
+    place-items: center;
+    background: #131B24;
+    border: 1px solid #26313E;
+    color: var(--fraco);
+    font-size: 14.5px;
+    font-weight: 700;
+  }
+  .passo.ativo .bola { background: linear-gradient(135deg, #F7D888, #D09A32); border-color: transparent; color: #16202B; }
+  .passo.feito .bola { background: #1D2A22; border-color: #2E5A45; color: var(--verde); }
+  .passo .nome { font-size: 11.5px; color: var(--fraco); }
+  .passo.ativo .nome { color: var(--texto); font-weight: 600; }
+  .passo::after {
+    content: '';
+    position: absolute;
+    top: 19px;
+    left: 62%;
+    right: -38%;
+    height: 1px;
+    background: #26313E;
+  }
+  .passo:last-child::after { display: none; }
+
+  .cofre-aviso {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(150deg, rgba(233,180,76,.08), rgba(233,180,76,.02));
+    border: 1px solid rgba(233,180,76,.22);
+    margin: 4px 0 18px;
+  }
+  .cofre-aviso .escudo { color: var(--ouro); flex: 0 0 auto; }
+  .cofre-aviso .escudo svg { width: 26px; height: 26px; }
+  .cofre-aviso .t { font-size: 13.5px; font-weight: 700; margin-bottom: 3px; }
+  .cofre-aviso .d { font-size: 12px; color: var(--suave); line-height: 1.5; }
+
+  .rodape-troca { text-align: center; font-size: 13.5px; color: var(--suave); margin-top: 18px; }
+  .rodape-troca button { color: var(--ouro); font-weight: 700; font-size: 13.5px; }
+
+  .codigo-recuperacao {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 19px;
+    letter-spacing: .12em;
+    text-align: center;
+    padding: 16px;
+    border-radius: 12px;
+    background: #0D131A;
+    border: 1px dashed rgba(233,180,76,.4);
+    color: var(--ouro);
+    margin: 14px 0;
+    word-break: break-all;
+  }
+
+  .contas-salvas { display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px; }
+  .conta-salva {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
+    border-radius: 14px;
+    background: #0D131A;
+    border: 1px solid #212C39;
+    text-align: left;
+    width: 100%;
+  }
+  .conta-salva:active { background: #141C25; }
+  .conta-salva .avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F7D888, #D09A32);
+    color: #16202B;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    flex: 0 0 auto;
+  }
+
+  /* ---------- Seleção de categorias do orçamento ---------- */
+
+  .cat-linha {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 13px 14px;
+    border-top: 1px solid var(--borda);
+    text-align: left;
+  }
+  .cat-linha:first-child { border-top: 0; }
+  .cat-linha:active { background: var(--cartao-2); }
+  .cat-linha .marca {
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    border: 1.5px solid #2E3A49;
+    display: grid;
+    place-items: center;
+    color: #16202B;
+    font-size: 13px;
+    font-weight: 700;
+    flex: 0 0 auto;
+  }
+  .cat-linha[aria-pressed="true"] .marca { background: var(--ouro); border-color: var(--ouro); }
+  .cat-linha .nome { flex: 1; min-width: 0; font-size: 15px; }
+  .cat-linha .gasto { font-size: 13px; color: var(--suave); font-variant-numeric: tabular-nums; }
+  .cat-linha .gasto.zero { color: var(--fraco); }
+
+  .orc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .orc-item .rot { flex: 1; min-width: 0; font-size: 14.5px; }
+  .orc-item .rot small { display: block; color: var(--fraco); font-size: 11.5px; }
+  .orc-item input { width: 132px; flex: 0 0 auto; text-align: right; padding: 11px 12px; }
+  .orc-item .tirar { color: var(--vermelho); font-size: 20px; padding: 6px; flex: 0 0 auto; }
+
+  /* ---------- Empreendedor ---------- */
+
+  .resumo-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  .resumo-grade > div { text-align: center; }
+  .resumo-grade .r { font-size: 11px; color: var(--suave); text-transform: uppercase; letter-spacing: .04em; }
+  .resumo-grade .v { font-size: 15px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+  .aba-cliente { display: flex; gap: 8px; margin: 14px 0 6px; }
+  .aba-cliente button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 11px;
+    background: var(--cartao-2);
+    border: 1px solid var(--borda);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--suave);
+  }
+  .aba-cliente button[aria-selected="true"] { background: var(--ouro); color: #16202B; border-color: var(--ouro); }
+
+  .etiqueta {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .etiqueta.quitado { background: rgba(52,211,153,.14); color: var(--verde); }
+  .etiqueta.aberto { background: rgba(233,180,76,.14); color: var(--ouro); }
+  .etiqueta.atrasado { background: rgba(248,113,113,.14); color: var(--vermelho); }
+
+  /* ---------- Novidades ---------- */
+
+  .novidade { border-left: 2px solid var(--ouro); padding: 2px 0 2px 14px; margin-bottom: 20px; }
+  .novidade .v { font-size: 15px; font-weight: 700; }
+  .novidade .q { font-size: 12px; color: var(--fraco); margin-bottom: 8px; }
+  .novidade ul { margin: 0; padding-left: 17px; font-size: 13.5px; color: var(--suave); line-height: 1.65; }
+
   @media print {
     :root { --fundo: #fff; --texto: #111; --suave: #555; --fraco: #777; --borda: #ccc; }
     body { background: #fff; color: #111; }
@@ -526,6 +940,8 @@
 </style>
 </head>
 <body>
+
+<div id="entrada" class="escondida"></div>
 
 <main>
   <section class="tela ativa" id="telaInicio"></section>
@@ -557,15 +973,51 @@
 (function () {
   'use strict';
 
-  var VERSAO = '2.0.0';
+  var VERSAO = '3.0.0';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
+  var CHAVE_CONTAS = 'caixa.usuarios.v3';
+  var CHAVE_SESSAO = 'caixa.sessao.v3';
+
+  var NOVIDADES = [
+    {
+      versao: '3.0.0',
+      data: '2026-09-05',
+      itens: [
+        'Telas de abertura, login e criação de conta.',
+        'Contas de usuário no aparelho, cada uma com seus próprios dados.',
+        'Os dados de cada conta passam a ser guardados cifrados (AES-GCM 256).',
+        'Código de recuperação para não perder tudo se esquecer a senha.',
+        'Aba Empreendedor: clientes, serviços prestados, pagamentos e cobranças.',
+        'Orçamento agora tem seleção de categorias, com o gasto do mês ao lado.',
+        'Dá para criar categorias novas na mão.',
+        'O botão voltar do celular fecha o que estiver aberto em vez de sair do app.',
+        'Tela de novidades com o histórico de versões.'
+      ]
+    },
+    {
+      versao: '2.0.0',
+      data: '2026-09-05',
+      itens: [
+        'Tema escuro e cinco telas.',
+        'Contas bancárias com saldo próprio e transferências entre elas.',
+        'Investimentos com histórico de valor, alocação e rentabilidade.',
+        'Metas, orçamento por categoria, reserva de emergência e aposentadoria.',
+        'Gráficos de área e rosca, análises do mês e quatro relatórios em PDF.'
+      ]
+    },
+    {
+      versao: '1.0.0',
+      data: '2026-09-05',
+      itens: ['Primeira versão: lançamentos de entrada e saída, com totais por mês.']
+    }
+  ];
 
   var CATEGORIAS = {
     saida: ['Moradia', 'Transporte', 'Combustível', 'Alimentação', 'Mercado', 'Casa', 'Manutenção',
             'Peças', 'Ferramentas', 'Saúde', 'Educação', 'Lazer', 'Assinaturas', 'Impostos',
             'Investimentos', 'Outros'],
-    entrada: ['Salário', 'Uber', 'Oficina', 'Freela', 'Venda', 'Rendimentos', 'Outros']
+    entrada: ['Salário', 'Serviços', 'Uber', 'Oficina', 'Freela', 'Venda', 'Rendimentos', 'Outros']
   };
 
   var CLASSES_ATIVO = ['Renda Fixa', 'Ações', 'FIIs', 'Exterior', 'Cripto', 'Outros'];
@@ -670,14 +1122,26 @@
 
   function estadoPadrao() {
     return {
-      versao: 2,
-      perfil: { nome: '', reservaMeses: 6, idadeAtual: 30, idadeAposentadoria: 60, aporteMensal: 0, rendimentoAnual: 8 },
+      versao: 3,
+      perfil: { nome: '', reservaMeses: 6, idadeAtual: 30, idadeAposentadoria: 60, aporteMensal: 0, rendimentoAnual: 8, objetivos: [] },
       contas: [],
       lancamentos: [],
       ativos: [],
       metas: [],
-      orcamentos: { geral: 0, categorias: {} }
+      orcamentos: { geral: 0, categorias: {} },
+      categoriasExtras: { saida: [], entrada: [] },
+      clientes: [],
+      servicos: [],
+      pagamentos: []
     };
+  }
+
+  // Categorias fixas mais as que a pessoa criou.
+  function categoriasDe(tipo) {
+    var extras = (estado && estado.categoriasExtras && estado.categoriasExtras[tipo]) || [];
+    var base = CATEGORIAS[tipo].slice();
+    extras.forEach(function (c) { if (base.indexOf(c) < 0) base.splice(base.length - 1, 0, c); });
+    return base;
   }
 
   function novoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
@@ -700,6 +1164,69 @@
       limpo.perfil.aporteMensal = Math.max(inteiro(bruto.perfil.aporteMensal), 0);
       var rend = Number(bruto.perfil.rendimentoAnual);
       limpo.perfil.rendimentoAnual = isFinite(rend) ? Math.min(Math.max(rend, 0), 60) : 8;
+      if (Array.isArray(bruto.perfil.objetivos)) {
+        limpo.perfil.objetivos = bruto.perfil.objetivos.filter(function (o) { return typeof o === 'string'; }).slice(0, 10);
+      }
+    }
+
+    if (bruto.categoriasExtras && typeof bruto.categoriasExtras === 'object') {
+      ['saida', 'entrada'].forEach(function (tipo) {
+        var lista = bruto.categoriasExtras[tipo];
+        if (!Array.isArray(lista)) return;
+        limpo.categoriasExtras[tipo] = lista
+          .filter(function (c) { return typeof c === 'string' && c.trim(); })
+          .map(function (c) { return c.trim().slice(0, 30); })
+          .slice(0, 40);
+      });
+    }
+
+    if (Array.isArray(bruto.clientes)) {
+      limpo.clientes = bruto.clientes.filter(function (c) {
+        return c && typeof c === 'object' && typeof c.id === 'string' && texto(c.nome);
+      }).map(function (c) {
+        return {
+          id: c.id,
+          nome: texto(c.nome).slice(0, 60),
+          telefone: texto(c.telefone).slice(0, 30),
+          obs: texto(c.obs).slice(0, 200),
+          proximoPagamento: ehData(c.proximoPagamento) ? c.proximoPagamento : '',
+          criadoEm: inteiro(c.criadoEm) || Date.now()
+        };
+      });
+    }
+
+    if (Array.isArray(bruto.servicos)) {
+      limpo.servicos = bruto.servicos.filter(function (s) {
+        return s && typeof s === 'object' && typeof s.id === 'string' &&
+          typeof s.clienteId === 'string' && inteiro(s.valor) > 0 && ehData(s.data);
+      }).map(function (s) {
+        return {
+          id: s.id,
+          clienteId: s.clienteId,
+          nome: texto(s.nome).slice(0, 60) || 'Serviço',
+          valor: inteiro(s.valor),
+          data: s.data,
+          obs: texto(s.obs).slice(0, 200),
+          criadoEm: inteiro(s.criadoEm) || Date.now()
+        };
+      });
+    }
+
+    if (Array.isArray(bruto.pagamentos)) {
+      limpo.pagamentos = bruto.pagamentos.filter(function (p) {
+        return p && typeof p === 'object' && typeof p.id === 'string' &&
+          typeof p.clienteId === 'string' && inteiro(p.valor) > 0 && ehData(p.data);
+      }).map(function (p) {
+        return {
+          id: p.id,
+          clienteId: p.clienteId,
+          servicoId: texto(p.servicoId),
+          valor: inteiro(p.valor),
+          data: p.data,
+          lancamentoId: texto(p.lancamentoId),
+          criadoEm: inteiro(p.criadoEm) || Date.now()
+        };
+      });
     }
 
     if (Array.isArray(bruto.contas)) {
@@ -773,9 +1300,9 @@
       limpo.orcamentos.geral = Math.max(inteiro(bruto.orcamentos.geral), 0);
       var cats = bruto.orcamentos.categorias;
       if (cats && typeof cats === 'object') {
-        CATEGORIAS.saida.forEach(function (c) {
+        Object.keys(cats).slice(0, 60).forEach(function (c) {
           var v = Math.max(inteiro(cats[c]), 0);
-          if (v > 0) limpo.orcamentos.categorias[c] = v;
+          if (v > 0 && c.length <= 30) limpo.orcamentos.categorias[c] = v;
         });
       }
     }
@@ -807,24 +1334,245 @@
     return limparEstado(novo);
   }
 
-  function carregar() {
-    var bruto = null;
-    try { bruto = JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch (e) { bruto = null; }
+  // ---------- Criptografia dos dados ----------
+  // Cada conta tem uma chave mestra aleatória. Ela é guardada duas vezes:
+  // embrulhada pela senha e embrulhada pelo código de recuperação. O cofre
+  // com os dados é cifrado com AES-GCM usando essa chave mestra.
 
-    if (bruto) { estado = limparEstado(bruto); return; }
+  var cripto = window.crypto && window.crypto.subtle ? window.crypto : null;
 
-    var migrado = migrarDaV1();
-    if (migrado) { estado = migrado; salvar(); return; }
-
-    estado = estadoPadrao();
+  function paraBase64(bytes) {
+    var s = '';
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s);
   }
 
-  function salvar() {
+  function deBase64(texto) {
+    var s = atob(texto);
+    var bytes = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+    return bytes;
+  }
+
+  function bytesAleatorios(n) { return cripto.getRandomValues(new Uint8Array(n)); }
+
+  function derivarChave(segredo, saltB64) {
+    return cripto.subtle.importKey('raw', new TextEncoder().encode(segredo), 'PBKDF2', false, ['deriveKey'])
+      .then(function (base) {
+        return cripto.subtle.deriveKey(
+          { name: 'PBKDF2', salt: deBase64(saltB64), iterations: 210000, hash: 'SHA-256' },
+          base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+      });
+  }
+
+  function cifrarBytes(chave, bytes) {
+    var iv = bytesAleatorios(12);
+    return cripto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, chave, bytes).then(function (cif) {
+      var saida = new Uint8Array(12 + cif.byteLength);
+      saida.set(iv, 0);
+      saida.set(new Uint8Array(cif), 12);
+      return paraBase64(saida);
+    });
+  }
+
+  function decifrarBytes(chave, b64) {
+    var bytes = deBase64(b64);
+    return cripto.subtle.decrypt(
+      { name: 'AES-GCM', iv: bytes.slice(0, 12) }, chave, bytes.slice(12)
+    ).then(function (claro) { return new Uint8Array(claro); });
+  }
+
+  function cifrar(chave, objeto) {
+    return cifrarBytes(chave, new TextEncoder().encode(JSON.stringify(objeto)));
+  }
+
+  function decifrar(chave, b64) {
+    return decifrarBytes(chave, b64).then(function (bytes) {
+      return JSON.parse(new TextDecoder().decode(bytes));
+    });
+  }
+
+  function novaChaveMestra() {
+    return cripto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+  }
+
+  function exportarChave(chave) {
+    return cripto.subtle.exportKey('raw', chave).then(function (b) { return paraBase64(new Uint8Array(b)); });
+  }
+
+  function importarChave(b64) {
+    return cripto.subtle.importKey('raw', deBase64(b64), { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+  }
+
+  function embrulhar(chaveMestra, segredo, saltB64) {
+    return Promise.all([exportarChave(chaveMestra), derivarChave(segredo, saltB64)])
+      .then(function (r) { return cifrarBytes(r[1], deBase64(r[0])); });
+  }
+
+  function desembrulhar(envelope, segredo, saltB64) {
+    return derivarChave(segredo, saltB64)
+      .then(function (chaveSegredo) { return decifrarBytes(chaveSegredo, envelope); })
+      .then(function (bruto) { return importarChave(paraBase64(bruto)); });
+  }
+
+  function gerarCodigoRecuperacao() {
+    // Sem vogais, para o código nunca formar palavra.
+    var alfabeto = 'BCDFGHJKLMNPQRSTVWXZ23456789';
+    var bytes = bytesAleatorios(20);
+    var saida = '';
+    for (var i = 0; i < 20; i++) {
+      if (i > 0 && i % 5 === 0) saida += '-';
+      saida += alfabeto[bytes[i] % alfabeto.length];
+    }
+    return saida;
+  }
+
+  // ---------- Contas de usuário ----------
+
+  function lerContas() {
     try {
-      localStorage.setItem(CHAVE, JSON.stringify(estado));
+      var lista = JSON.parse(localStorage.getItem(CHAVE_CONTAS) || '[]');
+      return Array.isArray(lista) ? lista : [];
+    } catch (e) { return []; }
+  }
+
+  function gravarContas(lista) {
+    try {
+      localStorage.setItem(CHAVE_CONTAS, JSON.stringify(lista));
     } catch (e) {
       avisar('Não foi possível salvar. Armazenamento cheio?');
     }
+  }
+
+  function normalizarEmail(email) { return String(email || '').trim().toLowerCase(); }
+
+  var sessao = null;          // { contaId, chave }
+  var filaSalvar = Promise.resolve();
+
+  function salvar() {
+    if (!sessao) return;
+    filaSalvar = filaSalvar.then(function () {
+      return cifrar(sessao.chave, estado).then(function (cofre) {
+        var contas = lerContas();
+        var conta = achar(contas, sessao.contaId);
+        if (!conta) return;
+        conta.cofre = cofre;
+        conta.atualizadoEm = Date.now();
+        gravarContas(contas);
+      });
+    }).catch(function () {
+      avisar('Não foi possível salvar os dados.');
+    });
+    return filaSalvar;
+  }
+
+  // Dados soltos das versões anteriores, para levar na primeira conta criada.
+  function dadosParaImportar() {
+    if (localStorage.getItem('caixa.importado.v3')) return null;
+    var bruto = null;
+    try { bruto = JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch (e) { bruto = null; }
+    if (bruto) return limparEstado(bruto);
+    return migrarDaV1();
+  }
+
+  function marcarImportado() {
+    try { localStorage.setItem('caixa.importado.v3', '1'); } catch (e) { /* sem espaço, tudo bem */ }
+  }
+
+  function criarConta(nome, email, senha) {
+    var contas = lerContas();
+    var codigo = gerarCodigoRecuperacao();
+    var saltSenha = paraBase64(bytesAleatorios(16));
+    var saltCodigo = paraBase64(bytesAleatorios(16));
+    var chaveMestra;
+
+    return novaChaveMestra().then(function (chave) {
+      chaveMestra = chave;
+      return Promise.all([
+        embrulhar(chaveMestra, senha, saltSenha),
+        embrulhar(chaveMestra, codigo, saltCodigo),
+        cifrar(chaveMestra, dadosParaImportar() || estadoPadrao())
+      ]);
+    }).then(function (r) {
+      var conta = {
+        id: novoId(),
+        nome: nome,
+        email: normalizarEmail(email),
+        criadoEm: Date.now(),
+        atualizadoEm: Date.now(),
+        saltSenha: saltSenha,
+        saltCodigo: saltCodigo,
+        envelopeSenha: r[0],
+        envelopeCodigo: r[1],
+        cofre: r[2]
+      };
+      contas.push(conta);
+      gravarContas(contas);
+      marcarImportado();
+      return { conta: conta, chave: chaveMestra, codigo: codigo };
+    });
+  }
+
+  function entrarComSenha(conta, senha) {
+    return desembrulhar(conta.envelopeSenha, senha, conta.saltSenha);
+  }
+
+  function entrarComCodigo(conta, codigo) {
+    return desembrulhar(conta.envelopeCodigo, String(codigo).trim().toUpperCase(), conta.saltCodigo);
+  }
+
+  function trocarSenha(conta, chaveMestra, novaSenha) {
+    var salt = paraBase64(bytesAleatorios(16));
+    return embrulhar(chaveMestra, novaSenha, salt).then(function (envelope) {
+      var contas = lerContas();
+      var alvo = achar(contas, conta.id);
+      if (!alvo) return;
+      alvo.saltSenha = salt;
+      alvo.envelopeSenha = envelope;
+      gravarContas(contas);
+    });
+  }
+
+  function guardarSessao(contaId, chave, lembrar) {
+    return exportarChave(chave).then(function (bruta) {
+      var pacote = JSON.stringify({ contaId: contaId, chave: bruta });
+      try {
+        sessionStorage.setItem(CHAVE_SESSAO, pacote);
+        if (lembrar) localStorage.setItem(CHAVE_SESSAO, pacote);
+        else localStorage.removeItem(CHAVE_SESSAO);
+      } catch (e) { /* sessão só nesta aba */ }
+    });
+  }
+
+  function limparSessao() {
+    try {
+      sessionStorage.removeItem(CHAVE_SESSAO);
+      localStorage.removeItem(CHAVE_SESSAO);
+    } catch (e) { /* nada a fazer */ }
+  }
+
+  function sessaoGuardada() {
+    var bruto = null;
+    try { bruto = sessionStorage.getItem(CHAVE_SESSAO) || localStorage.getItem(CHAVE_SESSAO); } catch (e) { return null; }
+    if (!bruto) return null;
+    try { return JSON.parse(bruto); } catch (e) { return null; }
+  }
+
+  function abrirCofre(conta, chave) {
+    sessao = { contaId: conta.id, chave: chave };
+    return decifrar(chave, conta.cofre).then(function (dados) {
+      estado = limparEstado(dados);
+    }).catch(function () {
+      estado = estadoPadrao();
+    });
+  }
+
+  function sair() {
+    limparSessao();
+    sessao = null;
+    estado = estadoPadrao();
+    telaAtiva = 'inicio';
+    mostrarEntrada('abertura');
   }
 
   function achar(lista, id) {
@@ -1218,6 +1966,724 @@
     return s;
   }
 
+  // ---------- Ícones ----------
+
+  function caminho(d, extra) {
+    var atrib = { d: d, stroke: 'currentColor', 'stroke-width': 1.7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none' };
+    Object.keys(extra || {}).forEach(function (k) { atrib[k] = extra[k]; });
+    return svgNo('path', atrib);
+  }
+
+  var DESENHOS = {
+    email: 'M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5zM3.5 7.5l8.5 6 8.5-6',
+    cadeado: 'M7 10V7.5a5 5 0 0 1 10 0V10M5.5 10h13a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z',
+    pessoa: 'M12 11.5a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5zM4.5 20a7.5 7.5 0 0 1 15 0',
+    telefone: 'M7 3.5h3l1.5 4-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 3.5 5.5a2 2 0 0 1 2-2z',
+    olho: 'M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+    olhoFechado: 'M3 3l18 18M10.6 10.7a2 2 0 0 0 2.8 2.8M9.4 5.9A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.3 4M6.3 7.8A16.8 16.8 0 0 0 2.5 12S6 18.5 12 18.5c1 0 1.9-.2 2.7-.5',
+    voltar: 'M14.5 5.5 8 12l6.5 6.5',
+    entrar: 'M14 3.5h4.5a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H14M10 16l4-4-4-4M14 12H3.5',
+    barras: 'M4 20V11M10 20V4M16 20v-6M22 20H2',
+    escudo: 'M12 3.5 5 6v6c0 4.2 2.9 7.7 7 8.5 4.1-.8 7-4.3 7-8.5V6z',
+    escudoOk: 'M12 3.5 5 6v6c0 4.2 2.9 7.7 7 8.5 4.1-.8 7-4.3 7-8.5V6zM9 12l2 2 4-4',
+    ideia: 'M9.2 17.5h5.6M10 20.5h4M12 3.5a6 6 0 0 0-3.6 10.8c.5.4.8 1 .8 1.6v.6h5.6v-.6c0-.6.3-1.2.8-1.6A6 6 0 0 0 12 3.5z',
+    alvo: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z',
+    maleta: 'M4 8.5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zM9 8.5v-2a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6.5v2M3 13h18',
+    mais: 'M12 5v14M5 12h14',
+    lixo: 'M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7'
+  };
+
+  function icone(nome, tamanho) {
+    var svg = svgNo('svg', { viewBox: '0 0 24 24', fill: 'none' });
+    if (tamanho) { svg.setAttribute('width', tamanho); svg.setAttribute('height', tamanho); }
+    svg.appendChild(caminho(DESENHOS[nome]));
+    return svg;
+  }
+
+  function logoGoogle() {
+    var svg = svgNo('svg', { viewBox: '0 0 24 24' });
+    [
+      ['M21.6 12.23c0-.71-.06-1.4-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.5h3.24c1.89-1.74 2.98-4.3 2.98-7.35z', '#4285F4'],
+      ['M12 22c2.7 0 4.96-.9 6.62-2.42l-3.24-2.5c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.06v2.59A10 10 0 0 0 12 22z', '#34A853'],
+      ['M6.41 13.92a6 6 0 0 1 0-3.83V7.5H3.06a10 10 0 0 0 0 9z', '#FBBC05'],
+      ['M12 5.98c1.47 0 2.79.5 3.83 1.5l2.87-2.87A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.94 5.5l3.35 2.59C7.2 7.73 9.4 5.98 12 5.98z', '#EA4335']
+    ].forEach(function (p) { svg.appendChild(svgNo('path', { d: p[0], fill: p[1] })); });
+    return svg;
+  }
+
+  function logoApple() {
+    var svg = svgNo('svg', { viewBox: '0 0 24 24' });
+    svg.appendChild(svgNo('path', {
+      d: 'M16.4 12.7c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.9-3.5.9s-1.8-.8-3-.8c-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.2 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.2 1.3-2.5 1.3-2.5s-2.5-1-2.5-3.6zM14.2 5.9c.6-.8 1.1-1.9 1-3-1 0-2.1.6-2.8 1.5-.6.7-1.1 1.8-1 2.9 1.1.1 2.2-.6 2.8-1.4z',
+      fill: '#FFFFFF'
+    }));
+    return svg;
+  }
+
+  function logoFacebook() {
+    var svg = svgNo('svg', { viewBox: '0 0 24 24' });
+    svg.appendChild(svgNo('circle', { cx: 12, cy: 12, r: 10, fill: '#1877F2' }));
+    svg.appendChild(svgNo('path', {
+      d: 'M13.4 21.9V14h2.6l.5-3.1h-3.1V9c0-.9.3-1.6 1.6-1.6H16.7V4.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.2v2.2H7.5V14h2.8v7.9z',
+      fill: '#FFFFFF'
+    }));
+    return svg;
+  }
+
+  function marcaCaixa() {
+    var caixa = no('div', 'marca-caixa');
+    var svg = svgNo('svg', { viewBox: '0 0 200 190', width: '190', height: '180', role: 'img' });
+    svg.setAttribute('aria-label', 'Símbolo do Caixa');
+
+    var defs = svgNo('defs', {});
+    var g1 = svgNo('linearGradient', { id: 'gemA', x1: '0', y1: '0', x2: '1', y2: '1' });
+    g1.appendChild(svgNo('stop', { offset: '0%', 'stop-color': '#22303E' }));
+    g1.appendChild(svgNo('stop', { offset: '100%', 'stop-color': '#080C11' }));
+    var g2 = svgNo('linearGradient', { id: 'gemB', x1: '0', y1: '0', x2: '1', y2: '1' });
+    g2.appendChild(svgNo('stop', { offset: '0%', 'stop-color': '#131B24' }));
+    g2.appendChild(svgNo('stop', { offset: '100%', 'stop-color': '#05080B' }));
+    var g3 = svgNo('linearGradient', { id: 'raio', x1: '0', y1: '0', x2: '1', y2: '1' });
+    g3.appendChild(svgNo('stop', { offset: '0%', 'stop-color': '#FBE3A6' }));
+    g3.appendChild(svgNo('stop', { offset: '100%', 'stop-color': '#D09A32' }));
+    juntar(defs, g1, g2, g3);
+    svg.appendChild(defs);
+
+    // Base luminosa
+    svg.appendChild(svgNo('ellipse', {
+      cx: 100, cy: 158, rx: 74, ry: 15, fill: 'none',
+      stroke: '#8A6A25', 'stroke-width': 1.4, opacity: '.85'
+    }));
+    svg.appendChild(svgNo('ellipse', { cx: 100, cy: 158, rx: 42, ry: 8, fill: 'rgba(233,180,76,.13)' }));
+
+    // Gema facetada
+    svg.appendChild(svgNo('path', { d: 'M100 12 172 58 146 148 54 148 28 58Z', fill: 'url(#gemA)', stroke: '#E9B44C', 'stroke-width': 1.6, 'stroke-linejoin': 'round' }));
+    svg.appendChild(svgNo('path', { d: 'M100 12 28 58 54 148Z', fill: 'url(#gemB)', opacity: '.9' }));
+    svg.appendChild(svgNo('path', { d: 'M100 12 146 148 172 58Z', fill: '#0A1017', opacity: '.55' }));
+    svg.appendChild(svgNo('path', { d: 'M28 58 100 84 172 58', fill: 'none', stroke: 'rgba(233,180,76,.5)', 'stroke-width': 1.1 }));
+    svg.appendChild(svgNo('path', { d: 'M100 12 100 84', fill: 'none', stroke: 'rgba(233,180,76,.34)', 'stroke-width': 1 }));
+    svg.appendChild(svgNo('path', { d: 'M54 148 100 84 146 148', fill: 'none', stroke: 'rgba(233,180,76,.26)', 'stroke-width': 1 }));
+    svg.appendChild(svgNo('path', { d: 'M28 58 54 148M172 58 146 148', fill: 'none', stroke: 'rgba(233,180,76,.18)', 'stroke-width': 1 }));
+
+    // Raio
+    svg.appendChild(svgNo('path', {
+      d: 'M112 44 76 100 97 100 88 140 128 82 106 82Z',
+      fill: 'url(#raio)', stroke: '#FBE3A6', 'stroke-width': 1.2, 'stroke-linejoin': 'round'
+    }));
+
+    caixa.appendChild(svg);
+    caixa.appendChild(no('div', 'marca-nome', 'CAIXA'));
+    caixa.appendChild(no('div', 'marca-sub', 'Inteligência financeira'));
+    return caixa;
+  }
+
+  // ---------- Telas de entrada ----------
+
+  var telaEntrada = 'abertura';
+  var lembrarLogin = true;
+  var cadastro = null;
+
+  var LAMINAS = [
+    {
+      titulo: ['O controle', 'transforma.'],
+      texto: 'Organize, invista e faça seu dinheiro render com clareza.',
+      vantagens: [
+        ['barras', 'Visão completa', 'Todas as suas finanças em um só lugar'],
+        ['escudo', 'Só seu', 'Dados cifrados dentro do seu aparelho'],
+        ['ideia', 'Análises', 'Padrões dos seus gastos, mês a mês']
+      ]
+    },
+    {
+      titulo: ['Cada real', 'no lugar.'],
+      texto: 'Contas, cartões, metas e investimentos acompanhados de perto.',
+      vantagens: [
+        ['alvo', 'Metas', 'Saiba quanto falta para cada objetivo'],
+        ['barras', 'Orçamento', 'Um teto por categoria, sem susto'],
+        ['escudoOk', 'Reserva', 'Calculada pelas suas despesas reais']
+      ]
+    },
+    {
+      titulo: ['Seu negócio', 'na palma da mão.'],
+      texto: 'Serviços, clientes e cobranças com o controle de quem já recebeu.',
+      vantagens: [
+        ['maleta', 'Clientes', 'Serviços prestados e valores combinados'],
+        ['alvo', 'Cobranças', 'Quanto pagaram e quanto ainda falta'],
+        ['barras', 'Relatórios', 'Resumos prontos para salvar em PDF']
+      ]
+    }
+  ];
+
+  function mostrarEntrada(qual) {
+    telaEntrada = qual || 'abertura';
+    $('entrada').classList.remove('escondida');
+    document.body.style.overflow = 'hidden';
+    montarEntrada();
+  }
+
+  function esconderEntrada() {
+    $('entrada').classList.add('escondida');
+    $('entrada').textContent = '';
+    document.body.style.overflow = '';
+  }
+
+  function campoEntrada(nomeIcone, tipo, dica, valor) {
+    var caixa = no('div', 'ent-campo');
+    var ic = no('div', 'icone');
+    ic.appendChild(icone(nomeIcone));
+    caixa.appendChild(ic);
+
+    var input = no('input');
+    input.type = tipo === 'senha' ? 'password' : tipo;
+    input.placeholder = dica;
+    input.value = valor || '';
+    if (tipo === 'email') { input.autocapitalize = 'off'; input.autocorrect = 'off'; input.inputMode = 'email'; }
+    if (tipo === 'tel') input.inputMode = 'tel';
+    caixa.appendChild(input);
+
+    if (tipo === 'senha') {
+      var olho = botao('olho', null, function () {
+        var escondida = input.type === 'password';
+        input.type = escondida ? 'text' : 'password';
+        olho.textContent = '';
+        olho.appendChild(icone(escondida ? 'olhoFechado' : 'olho'));
+        olho.setAttribute('aria-label', escondida ? 'Esconder senha' : 'Mostrar senha');
+      });
+      olho.appendChild(icone('olho'));
+      olho.setAttribute('aria-label', 'Mostrar senha');
+      caixa.appendChild(olho);
+    }
+
+    caixa.campo = input;
+    return caixa;
+  }
+
+  function erroEntrada(pai, mensagem) {
+    var antigo = pai.querySelector('.erro');
+    if (antigo) antigo.remove();
+    var e = no('p', 'erro', mensagem);
+    e.style.marginBottom = '10px';
+    pai.appendChild(e);
+  }
+
+  function avisoSocial() {
+    avisar('Entrar com Google, Apple ou Facebook precisa do servidor ligado.');
+  }
+
+  function botaoSocial(rotulo, logo) {
+    var b = botao('social', null, avisoSocial);
+    b.appendChild(logo);
+    b.appendChild(no('span', null, rotulo));
+    return b;
+  }
+
+  function montarEntrada() {
+    var raiz = $('entrada');
+    raiz.textContent = '';
+    var folha = no('div', 'ent-folha');
+    raiz.appendChild(folha);
+    raiz.scrollTop = 0;
+
+    if (telaEntrada === 'abertura') montarAbertura(folha);
+    else if (telaEntrada === 'login') montarLogin(folha);
+    else if (telaEntrada === 'cadastro') montarCadastro(folha);
+    else if (telaEntrada === 'recuperar') montarRecuperar(folha);
+    else if (telaEntrada === 'codigo') montarCodigoSalvo(folha);
+  }
+
+  function montarAbertura(folha) {
+    folha.appendChild(marcaCaixa());
+
+    var carrossel = no('div', 'carrossel');
+    LAMINAS.forEach(function (lamina) {
+      var slide = no('div');
+      var h = no('h1', 'ent-titulo');
+      h.appendChild(document.createTextNode(lamina.titulo[0]));
+      h.appendChild(no('span', 'ouro', lamina.titulo[1]));
+      slide.appendChild(h);
+      slide.appendChild(no('p', 'ent-texto', lamina.texto));
+
+      var grade = no('div', 'vantagens');
+      lamina.vantagens.forEach(function (v) {
+        var item = no('div', 'vantagem');
+        var quadro = no('div', 'quadro');
+        quadro.appendChild(icone(v[0]));
+        item.appendChild(quadro);
+        item.appendChild(no('div', 'nome', v[1]));
+        item.appendChild(no('div', 'detalhe', v[2]));
+        grade.appendChild(item);
+      });
+      slide.appendChild(grade);
+      carrossel.appendChild(slide);
+    });
+    folha.appendChild(carrossel);
+
+    var pontos = no('div', 'pontos');
+    LAMINAS.forEach(function (_, i) {
+      var p = no('i');
+      if (i === 0) p.className = 'ativo';
+      pontos.appendChild(p);
+    });
+    folha.appendChild(pontos);
+
+    carrossel.addEventListener('scroll', function () {
+      var indice = Math.round(carrossel.scrollLeft / carrossel.clientWidth);
+      Array.prototype.forEach.call(pontos.children, function (p, i) {
+        p.className = i === indice ? 'ativo' : '';
+      });
+    });
+
+    var fundo = no('div', 'ent-fundo');
+
+    var criar = botao('btn-dourado', null, function () { irEntrada('cadastro'); });
+    criar.appendChild(icone('email'));
+    criar.appendChild(no('span', null, 'Criar minha conta'));
+    fundo.appendChild(criar);
+
+    var entrar = botao('btn-contorno', null, function () { irEntrada('login'); });
+    entrar.appendChild(icone('entrar'));
+    entrar.appendChild(no('span', null, 'Entrar na minha conta'));
+    fundo.appendChild(entrar);
+
+    fundo.appendChild(no('div', 'separador', 'ou continue com'));
+
+    var sociais = no('div', 'sociais-linha');
+    sociais.appendChild(botaoSocial('Continuar com Google', logoGoogle()));
+    sociais.appendChild(botaoSocial('Continuar com Apple', logoApple()));
+    sociais.appendChild(botaoSocial('Continuar com Facebook', logoFacebook()));
+    fundo.appendChild(sociais);
+
+    var nota = no('p', 'termos', 'Login social chega quando o servidor estiver ligado.');
+    nota.style.marginTop = '10px';
+    fundo.appendChild(nota);
+
+    var termos = no('p', 'termos');
+    termos.appendChild(document.createTextNode('Ao continuar, você concorda com os '));
+    termos.appendChild(botao(null, 'Termos de Uso', function () { abrirTexto('termos'); }));
+    termos.appendChild(document.createTextNode(' e a '));
+    termos.appendChild(botao(null, 'Política de Privacidade', function () { abrirTexto('privacidade'); }));
+    termos.appendChild(document.createTextNode('.'));
+    fundo.appendChild(termos);
+
+    folha.appendChild(fundo);
+  }
+
+  function montarLogin(folha) {
+    var voltar = botao('ent-voltar', null, function () { voltarNavegacao(); });
+    voltar.appendChild(icone('voltar'));
+    voltar.setAttribute('aria-label', 'Voltar');
+    folha.appendChild(voltar);
+
+    var h = no('h1', 'ent-titulo');
+    h.style.textAlign = 'left';
+    h.appendChild(document.createTextNode('Bem-vindo'));
+    h.appendChild(no('span', 'ouro', 'de volta!'));
+    h.style.marginTop = '0';
+    folha.appendChild(h);
+
+    var p = no('p', 'ent-texto', 'Faça login para continuar sua jornada financeira.');
+    p.style.textAlign = 'left';
+    p.style.marginBottom = '26px';
+    folha.appendChild(p);
+
+    var contas = lerContas();
+    var forma = no('div');
+
+    if (contas.length) {
+      var salvas = no('div', 'contas-salvas');
+      contas.forEach(function (c) {
+        var b = botao('conta-salva', null, function () {
+          campoEmail.campo.value = c.email;
+          campoSenha.campo.focus();
+        });
+        var av = no('div', 'avatar', (c.nome || c.email || '?').charAt(0).toUpperCase());
+        b.appendChild(av);
+        var txt = no('div');
+        txt.style.minWidth = '0';
+        txt.appendChild(no('div', 'linha-titulo', c.nome || c.email));
+        txt.appendChild(no('div', 'linha-sub', c.email));
+        b.appendChild(txt);
+        salvas.appendChild(b);
+      });
+      forma.appendChild(salvas);
+    }
+
+    var campoEmail = campoEntrada('email', 'email', 'E-mail', contas.length ? contas[0].email : '');
+    var campoSenha = campoEntrada('cadeado', 'senha', 'Senha', '');
+    forma.appendChild(campoEmail);
+    forma.appendChild(campoSenha);
+
+    var meio = no('div', 'ent-linha-meio');
+    var lembrar = botao('lembrar', null, function () {
+      lembrarLogin = !lembrarLogin;
+      lembrar.setAttribute('aria-pressed', lembrarLogin ? 'true' : 'false');
+      lembrar.querySelector('.caixinha').textContent = lembrarLogin ? '✓' : '';
+    });
+    lembrar.setAttribute('aria-pressed', lembrarLogin ? 'true' : 'false');
+    lembrar.appendChild(no('span', 'caixinha', lembrarLogin ? '✓' : ''));
+    lembrar.appendChild(no('span', null, 'Lembrar de mim'));
+    meio.appendChild(lembrar);
+    meio.appendChild(botao('elo', 'Esqueci minha senha', function () { irEntrada('recuperar'); }));
+    forma.appendChild(meio);
+
+    var entrar = botao('btn-dourado', 'Entrar', function () {
+      var email = normalizarEmail(campoEmail.campo.value);
+      var senha = campoSenha.campo.value;
+      if (!email || !senha) { erroEntrada(forma, 'Preencha e-mail e senha.'); return; }
+
+      var conta = null;
+      lerContas().forEach(function (c) { if (c.email === email) conta = c; });
+      if (!conta) { erroEntrada(forma, 'Não achei uma conta com esse e-mail neste aparelho.'); return; }
+
+      entrar.disabled = true;
+      entrar.textContent = 'Entrando…';
+      entrarComSenha(conta, senha).then(function (chave) {
+        return guardarSessao(conta.id, chave, lembrarLogin).then(function () {
+          return abrirCofre(conta, chave);
+        });
+      }).then(function () {
+        esconderEntrada();
+        telaAtiva = 'inicio';
+        iniciarNavegacao();
+        desenhar();
+        avisar('Bem-vindo de volta' + (estado.perfil.nome ? ', ' + estado.perfil.nome : '') + '.');
+      }).catch(function () {
+        entrar.disabled = false;
+        entrar.textContent = 'Entrar';
+        erroEntrada(forma, 'Senha incorreta.');
+      });
+    });
+    forma.appendChild(entrar);
+
+    forma.appendChild(no('div', 'separador', 'ou continue com'));
+    var redondas = no('div', 'sociais-redondas');
+    [logoGoogle(), logoApple(), logoFacebook()].forEach(function (logo) {
+      var b = botao('social-redonda', null, avisoSocial);
+      b.appendChild(logo);
+      redondas.appendChild(b);
+    });
+    forma.appendChild(redondas);
+
+    var rodape = no('p', 'rodape-troca');
+    rodape.appendChild(document.createTextNode('Ainda não tem uma conta? '));
+    rodape.appendChild(botao(null, 'Criar conta', function () { irEntrada('cadastro'); }));
+    forma.appendChild(rodape);
+
+    folha.appendChild(forma);
+  }
+
+  function montarRecuperar(folha) {
+    var voltar = botao('ent-voltar', null, function () { voltarNavegacao(); });
+    voltar.appendChild(icone('voltar'));
+    voltar.setAttribute('aria-label', 'Voltar');
+    folha.appendChild(voltar);
+
+    var h = no('h1', 'ent-titulo');
+    h.style.textAlign = 'left';
+    h.style.marginTop = '0';
+    h.appendChild(document.createTextNode('Esqueceu'));
+    h.appendChild(no('span', 'ouro', 'a senha?'));
+    folha.appendChild(h);
+
+    var p = no('p', 'ent-texto', 'Use o código de recuperação que você guardou quando criou a conta. Com ele dá para abrir os dados e definir uma senha nova.');
+    p.style.textAlign = 'left';
+    p.style.marginBottom = '24px';
+    folha.appendChild(p);
+
+    var forma = no('div');
+    var campoEmail = campoEntrada('email', 'email', 'E-mail da conta', '');
+    var campoCodigo = campoEntrada('cadeado', 'text', 'Código de recuperação', '');
+    var campoNova = campoEntrada('cadeado', 'senha', 'Nova senha', '');
+    juntar(forma, campoEmail, campoCodigo, campoNova);
+
+    var b = botao('btn-dourado', 'Recuperar acesso', function () {
+      var email = normalizarEmail(campoEmail.campo.value);
+      var codigo = campoCodigo.campo.value;
+      var nova = campoNova.campo.value;
+      if (!email || !codigo || !nova) { erroEntrada(forma, 'Preencha os três campos.'); return; }
+      if (nova.length < 6) { erroEntrada(forma, 'A nova senha precisa de ao menos 6 caracteres.'); return; }
+
+      var conta = null;
+      lerContas().forEach(function (c) { if (c.email === email) conta = c; });
+      if (!conta) { erroEntrada(forma, 'Não achei uma conta com esse e-mail neste aparelho.'); return; }
+
+      b.disabled = true;
+      b.textContent = 'Verificando…';
+      entrarComCodigo(conta, codigo).then(function (chave) {
+        return trocarSenha(conta, chave, nova).then(function () {
+          return guardarSessao(conta.id, chave, true);
+        }).then(function () {
+          var atualizada = null;
+          lerContas().forEach(function (c) { if (c.id === conta.id) atualizada = c; });
+          return abrirCofre(atualizada || conta, chave);
+        });
+      }).then(function () {
+        esconderEntrada();
+        telaAtiva = 'inicio';
+        iniciarNavegacao();
+        desenhar();
+        avisar('Senha trocada. Bem-vindo de volta.');
+      }).catch(function () {
+        b.disabled = false;
+        b.textContent = 'Recuperar acesso';
+        erroEntrada(forma, 'Código de recuperação inválido para esta conta.');
+      });
+    });
+    forma.appendChild(b);
+    folha.appendChild(forma);
+  }
+
+  function montarCodigoSalvo(folha) {
+    var h = no('h1', 'ent-titulo');
+    h.style.textAlign = 'left';
+    h.style.marginTop = '0';
+    h.appendChild(document.createTextNode('Guarde seu'));
+    h.appendChild(no('span', 'ouro', 'código de recuperação'));
+    folha.appendChild(h);
+
+    var p = no('p', 'ent-texto', 'É a única forma de abrir seus dados se você esquecer a senha. Anote em um lugar seguro — ele não aparece de novo.');
+    p.style.textAlign = 'left';
+    folha.appendChild(p);
+
+    folha.appendChild(no('div', 'codigo-recuperacao', cadastro.codigo));
+
+    var copiar = botao('btn-contorno', 'Copiar código', function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cadastro.codigo).then(function () {
+          avisar('Código copiado.');
+        }).catch(function () { avisar('Copie o código manualmente.'); });
+      } else {
+        avisar('Copie o código manualmente.');
+      }
+    });
+    copiar.style.marginTop = '0';
+    folha.appendChild(copiar);
+
+    var fundo = no('div', 'ent-fundo');
+    fundo.appendChild(botao('btn-dourado', 'Já guardei, entrar no app', function () {
+      esconderEntrada();
+      telaAtiva = 'inicio';
+      iniciarNavegacao();
+      desenhar();
+      avisar('Conta criada. Tudo pronto!');
+    }));
+    folha.appendChild(fundo);
+  }
+
+  var OBJETIVOS = ['Controlar gastos', 'Montar reserva', 'Sair das dívidas', 'Investir mais',
+                   'Crescer meu negócio', 'Planejar aposentadoria'];
+
+  function montarCadastro(folha) {
+    if (!cadastro) {
+      cadastro = { passo: 1, nome: '', email: '', celular: '', senha: '', tratamento: '', idade: '', renda: 0, objetivos: [], codigo: '' };
+    }
+
+    var voltar = botao('ent-voltar', null, function () {
+      if (cadastro.passo > 1) { cadastro.passo -= 1; montarEntrada(); return; }
+      voltarNavegacao();
+    });
+    voltar.appendChild(icone('voltar'));
+    voltar.setAttribute('aria-label', 'Voltar');
+    folha.appendChild(voltar);
+
+    var h = no('h1', 'ent-titulo');
+    h.style.textAlign = 'left';
+    h.style.marginTop = '0';
+    h.appendChild(document.createTextNode('Crie '));
+    h.appendChild(no('span', 'ouro', 'sua conta'));
+    folha.appendChild(h);
+
+    var p = no('p', 'ent-texto', 'É rápido, seguro e de graça.');
+    p.style.textAlign = 'left';
+    folha.appendChild(p);
+
+    var passos = no('div', 'passos');
+    [['Dados', 1], ['Perfil', 2], ['Objetivos', 3]].forEach(function (item) {
+      var d = no('div', 'passo' + (cadastro.passo === item[1] ? ' ativo' : cadastro.passo > item[1] ? ' feito' : ''));
+      d.appendChild(no('div', 'bola', cadastro.passo > item[1] ? '✓' : String(item[1])));
+      d.appendChild(no('div', 'nome', item[0]));
+      passos.appendChild(d);
+    });
+    folha.appendChild(passos);
+
+    var forma = no('div');
+
+    if (cadastro.passo === 1) {
+      var cNome = campoEntrada('pessoa', 'text', 'Nome completo', cadastro.nome);
+      var cEmail = campoEntrada('email', 'email', 'E-mail', cadastro.email);
+      var cCelular = campoEntrada('telefone', 'tel', 'Celular (opcional)', cadastro.celular);
+      var cSenha = campoEntrada('cadeado', 'senha', 'Crie uma senha', cadastro.senha);
+      juntar(forma, cNome, cEmail, cCelular, cSenha);
+
+      var aviso = no('div', 'cofre-aviso');
+      var escudo = no('div', 'escudo');
+      escudo.appendChild(icone('escudoOk'));
+      aviso.appendChild(escudo);
+      var txt = no('div');
+      txt.appendChild(no('div', 't', 'Seus dados ficam protegidos'));
+      txt.appendChild(no('div', 'd', 'Tudo é guardado cifrado com AES-GCM 256 neste aparelho, com a chave saindo da sua senha. Nem eu nem ninguém abre sem ela.'));
+      aviso.appendChild(txt);
+      forma.appendChild(aviso);
+
+      var importar = dadosParaImportar();
+      if (importar && importar.lancamentos.length) {
+        var nota = no('p', 'termos', 'Os ' + importar.lancamentos.length + ' lançamentos que já estão neste aparelho vão para esta conta.');
+        nota.style.marginBottom = '14px';
+        forma.appendChild(nota);
+      }
+
+      forma.appendChild(botao('btn-dourado', 'Continuar', function () {
+        var nome = cNome.campo.value.trim();
+        var email = normalizarEmail(cEmail.campo.value);
+        var senha = cSenha.campo.value;
+
+        if (!nome) { erroEntrada(forma, 'Diga como você se chama.'); return; }
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { erroEntrada(forma, 'Confira o e-mail.'); return; }
+        if (senha.length < 6) { erroEntrada(forma, 'A senha precisa de ao menos 6 caracteres.'); return; }
+
+        var existe = false;
+        lerContas().forEach(function (c) { if (c.email === email) existe = true; });
+        if (existe) { erroEntrada(forma, 'Já existe uma conta com esse e-mail neste aparelho.'); return; }
+
+        cadastro.nome = nome;
+        cadastro.email = email;
+        cadastro.celular = cCelular.campo.value.trim();
+        cadastro.senha = senha;
+        cadastro.tratamento = cadastro.tratamento || nome.split(' ')[0];
+        cadastro.passo = 2;
+        montarEntrada();
+      }));
+    }
+
+    if (cadastro.passo === 2) {
+      var cTrat = campoEntrada('pessoa', 'text', 'Como quer ser chamado', cadastro.tratamento);
+      forma.appendChild(cTrat);
+
+      var cIdade = no('div', 'campo');
+      var lIdade = no('label', null, 'Sua idade');
+      var iIdade = entradaNumero(cadastro.idade || 30, '1', 14, 100);
+      lIdade.htmlFor = iIdade.id;
+      juntar(cIdade, lIdade, iIdade);
+      forma.appendChild(cIdade);
+
+      var cRenda = no('div', 'campo');
+      var lRenda = no('label', null, 'Quanto entra por mês, mais ou menos');
+      var iRenda = entradaValor(cadastro.renda, false);
+      lRenda.htmlFor = iRenda.id;
+      juntar(cRenda, lRenda, iRenda);
+      forma.appendChild(cRenda);
+
+      forma.appendChild(no('p', 'termos', 'Usamos isso só para sugerir a reserva de emergência e a projeção de aposentadoria. Dá para mudar depois.'));
+
+      var acao2 = botao('btn-dourado', 'Continuar', function () {
+        cadastro.tratamento = cTrat.campo.value.trim() || cadastro.nome.split(' ')[0];
+        cadastro.idade = parseInt(iIdade.value, 10) || 30;
+        cadastro.renda = digitosParaCentavos(iRenda.value);
+        cadastro.passo = 3;
+        montarEntrada();
+      });
+      acao2.style.marginTop = '10px';
+      forma.appendChild(acao2);
+    }
+
+    if (cadastro.passo === 3) {
+      forma.appendChild(no('p', 'ent-texto', 'O que você quer resolver primeiro? Escolha quantos quiser.'));
+      var chips = no('div', 'chips');
+      chips.style.margin = '16px 0 20px';
+      OBJETIVOS.forEach(function (obj) {
+        var c = botao('chip', obj, function () {
+          var i = cadastro.objetivos.indexOf(obj);
+          if (i >= 0) cadastro.objetivos.splice(i, 1);
+          else cadastro.objetivos.push(obj);
+          c.setAttribute('aria-pressed', cadastro.objetivos.indexOf(obj) >= 0 ? 'true' : 'false');
+        });
+        c.setAttribute('aria-pressed', cadastro.objetivos.indexOf(obj) >= 0 ? 'true' : 'false');
+        chips.appendChild(c);
+      });
+      forma.appendChild(chips);
+
+      var criar = botao('btn-dourado', 'Criar minha conta', function () {
+        criar.disabled = true;
+        criar.textContent = 'Criando…';
+
+        criarConta(cadastro.nome, cadastro.email, cadastro.senha).then(function (r) {
+          cadastro.codigo = r.codigo;
+          return abrirCofre(r.conta, r.chave).then(function () {
+            estado.perfil.nome = cadastro.tratamento;
+            estado.perfil.idadeAtual = cadastro.idade;
+            if (cadastro.renda > 0 && !estado.perfil.aporteMensal) {
+              estado.perfil.aporteMensal = Math.round(cadastro.renda * 0.1);
+            }
+            if (cadastro.objetivos.indexOf('Montar reserva') >= 0 && !estado.metas.length && cadastro.renda > 0) {
+              estado.metas.push({
+                id: novoId(), nome: 'Reserva de emergência',
+                alvo: cadastro.renda * 6, guardado: 0, prazo: ''
+              });
+            }
+            estado.perfil.objetivos = cadastro.objetivos.slice();
+            return salvar();
+          }).then(function () {
+            return guardarSessao(r.conta.id, r.chave, true);
+          });
+        }).then(function () {
+          telaEntrada = 'codigo';
+          montarEntrada();
+        }).catch(function () {
+          criar.disabled = false;
+          criar.textContent = 'Criar minha conta';
+          erroEntrada(forma, 'Não consegui criar a conta neste navegador.');
+        });
+      });
+      forma.appendChild(criar);
+    }
+
+    folha.appendChild(forma);
+
+    var rodape = no('p', 'rodape-troca');
+    rodape.appendChild(document.createTextNode('Já tem uma conta? '));
+    rodape.appendChild(botao(null, 'Entrar', function () { cadastro = null; irEntrada('login'); }));
+    folha.appendChild(rodape);
+  }
+
+  // ---------- Termos e privacidade ----------
+
+  var TEXTOS = {
+    termos: {
+      titulo: 'Termos de Uso',
+      partes: [
+        'O Caixa é um app de controle financeiro pessoal. Ele ajuda você a registrar e enxergar o seu dinheiro, mas não movimenta valores, não faz pagamentos e não dá recomendação de investimento.',
+        'Os números que aparecem aqui vêm do que você mesmo cadastra. Projeções, como a de aposentadoria, são estimativas matemáticas e não promessa de rendimento.',
+        'O app é fornecido como está, sem garantia. Confira sempre os valores oficiais no seu banco ou corretora antes de tomar decisões.',
+        'Você é responsável por guardar sua senha e o código de recuperação. Sem eles não há como abrir seus dados.'
+      ]
+    },
+    privacidade: {
+      titulo: 'Política de Privacidade',
+      partes: [
+        'Hoje o Caixa funciona inteiramente dentro do seu aparelho. Não existe servidor, não há cadastro em nenhum lugar e nada do que você digita sai do navegador.',
+        'Seus dados são gravados no armazenamento local do navegador, cifrados com AES-GCM de 256 bits. A chave é derivada da sua senha com PBKDF2 e nunca é guardada em texto puro.',
+        'Se você marcar "Lembrar de mim", a chave fica guardada no aparelho para abrir o app direto. Sem marcar, ela vale só enquanto a aba estiver aberta.',
+        'Não há rastreamento, publicidade, cookies de terceiros ou envio de estatísticas.',
+        'Apagar os dados do navegador apaga também suas informações. Use o backup em JSON no menu Mais para ter uma cópia — atenção: esse arquivo sai sem criptografia, então guarde em lugar seguro.',
+        'Quando o servidor entrar no ar, esta política será atualizada antes de qualquer dado sair do aparelho.'
+      ]
+    }
+  };
+
+  function abrirTexto(qual) {
+    var conteudo = TEXTOS[qual];
+    abrirFolha(conteudo.titulo, function (folha) {
+      conteudo.partes.forEach(function (parte) {
+        var p = no('p', 'linha-sub', parte);
+        p.style.marginBottom = '14px';
+        p.style.lineHeight = '1.6';
+        folha.appendChild(p);
+      });
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-fantasma', 'Fechar', function () { voltarNavegacao(); }));
+      folha.appendChild(acoes);
+    });
+  }
+
+
   // ---------- Estado da interface ----------
 
   var agora = new Date();
@@ -1226,6 +2692,7 @@
   var filtroTransacoes = 'todas';
   var buscaTransacoes = '';
   var abaInvestimentos = 'alocacao';
+  var abaInicio = 'geral';
 
   var TELAS = [
     { id: 'inicio', rotulo: 'Início', icone: 'M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5' },
@@ -1254,7 +2721,57 @@
     });
   }
 
-  function irPara(id) {
+  // ---------- Pilha de navegação (botão voltar do celular) ----------
+
+  var pilha = [];
+
+  function iniciarNavegacao() {
+    pilha = [];
+    try {
+      history.replaceState({ caixa: 'base' }, '');
+      history.pushState({ caixa: 'app' }, '');
+    } catch (e) { /* navegador sem history, o app segue */ }
+  }
+
+  function empilhar(item) {
+    pilha.push(item);
+    try { history.pushState({ caixa: pilha.length }, ''); } catch (e) { /* idem */ }
+  }
+
+  function topoEh(tipo) { return pilha.length > 0 && pilha[pilha.length - 1].tipo === tipo; }
+
+  function voltarNavegacao() {
+    if (pilha.length) { history.back(); return; }
+    perguntarSaida();
+  }
+
+  function perguntarSaida() {
+    if (confirm('Deseja sair do Caixa?')) {
+      try { history.back(); } catch (e) { /* nada a fazer */ }
+      return;
+    }
+    try { history.pushState({ caixa: 'app' }, ''); } catch (e) { /* idem */ }
+  }
+
+  function aoVoltar() {
+    if (!pilha.length) { perguntarSaida(); return; }
+
+    var item = pilha.pop();
+
+    if (item.tipo === 'folha') { fecharFolhaEfeito(); if (sessao) desenhar(); return; }
+    if (item.tipo === 'relatorio') { fecharRelatorioEfeito(); return; }
+    if (item.tipo === 'entrada') { telaEntrada = item.anterior; montarEntrada(); return; }
+    if (item.tipo === 'tela') { mostrarTela(item.anterior); return; }
+    if (item.tipo === 'aba') { item.voltar(); return; }
+  }
+
+  function irEntrada(qual) {
+    empilhar({ tipo: 'entrada', anterior: telaEntrada });
+    telaEntrada = qual;
+    montarEntrada();
+  }
+
+  function mostrarTela(id) {
     telaAtiva = id;
     ['inicio', 'transacoes', 'investimentos', 'planejamento', 'mais'].forEach(function (t) {
       var el = $('tela' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -1262,6 +2779,12 @@
     });
     window.scrollTo(0, 0);
     desenhar();
+  }
+
+  function irPara(id) {
+    if (id === telaAtiva) return;
+    empilhar({ tipo: 'tela', anterior: telaAtiva });
+    mostrarTela(id);
   }
 
   function cabecalho(titulo, subtitulo, comMes) {
@@ -1302,6 +2825,53 @@
     return { ano: d.getFullYear(), mes: d.getMonth() };
   }
 
+  // ---------- Empreendedor: cálculos ----------
+
+  function servicosDoCliente(id) {
+    return estado.servicos.filter(function (s) { return s.clienteId === id; })
+      .sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
+  }
+
+  function pagamentosDoCliente(id) {
+    return estado.pagamentos.filter(function (p) { return p.clienteId === id; })
+      .sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
+  }
+
+  function resumoCliente(id) {
+    var total = 0, pago = 0;
+    estado.servicos.forEach(function (s) { if (s.clienteId === id) total += s.valor; });
+    estado.pagamentos.forEach(function (p) { if (p.clienteId === id) pago += p.valor; });
+    return { total: total, pago: pago, restante: total - pago };
+  }
+
+  function resumoGeralClientes() {
+    var total = 0, pago = 0;
+    estado.servicos.forEach(function (s) { total += s.valor; });
+    estado.pagamentos.forEach(function (p) { pago += p.valor; });
+    var atrasados = 0;
+    var hoje = hojeTexto();
+    estado.clientes.forEach(function (c) {
+      var r = resumoCliente(c.id);
+      if (r.restante > 0 && c.proximoPagamento && c.proximoPagamento < hoje) atrasados += 1;
+    });
+    return { total: total, pago: pago, restante: total - pago, atrasados: atrasados };
+  }
+
+  function situacaoCliente(cliente) {
+    var r = resumoCliente(cliente.id);
+    if (r.total === 0) return { classe: 'aberto', texto: 'sem serviço' };
+    if (r.restante <= 0) return { classe: 'quitado', texto: 'quitado' };
+    if (cliente.proximoPagamento && cliente.proximoPagamento < hojeTexto()) return { classe: 'atrasado', texto: 'atrasado' };
+    return { classe: 'aberto', texto: 'em aberto' };
+  }
+
+  function proximoPagamentoGeral() {
+    var datas = estado.clientes.filter(function (c) {
+      return c.proximoPagamento && resumoCliente(c.id).restante > 0;
+    }).map(function (c) { return c.proximoPagamento; }).sort();
+    return datas.length ? datas[0] : '';
+  }
+
   // ---------- Tela: Início ----------
 
   function desenharInicio() {
@@ -1318,6 +2888,20 @@
       diaTexto + ', ' + hoje.getDate() + ' de ' + MESES[hoje.getMonth()],
       false
     ));
+
+    tela.appendChild(segmentos([
+      { valor: 'geral', rotulo: 'Visão geral' },
+      { valor: 'empreendedor', rotulo: 'Empreendedor' }
+    ], abaInicio, function (v) {
+      if (v === abaInicio) return;
+      var anterior = abaInicio;
+      empilhar({ tipo: 'aba', voltar: function () { abaInicio = anterior; desenharInicio(); } });
+      abaInicio = v;
+      window.scrollTo(0, 0);
+      desenharInicio();
+    }));
+
+    if (abaInicio === 'empreendedor') { desenharEmpreendedor(tela); return; }
 
     // Patrimônio
     var cPat = cartao();
@@ -1411,6 +2995,430 @@
       cContas.appendChild(totalLinha);
     }
     tela.appendChild(cContas);
+  }
+
+  // ---------- Empreendedor: tela ----------
+
+  function desenharEmpreendedor(tela) {
+    var geral = resumoGeralClientes();
+
+    var cResumo = cartao();
+    cResumo.appendChild(no('div', 'rotulo', 'A receber de todos os clientes'));
+    cResumo.appendChild(no('div', 'valorao num ' + (geral.restante > 0 ? 'ouro' : 'verde'), emReais(geral.restante)));
+
+    var barra = no('div', 'barra-dupla');
+    barra.style.marginTop = '10px';
+    var iPago = no('i');
+    iPago.style.width = pct(geral.pago, geral.total) + '%';
+    iPago.style.background = 'var(--verde)';
+    var iFalta = no('i');
+    iFalta.style.width = (geral.total > 0 ? 100 - pct(geral.pago, geral.total) : 0) + '%';
+    iFalta.style.background = 'var(--ouro)';
+    juntar(barra, iPago, iFalta);
+    cResumo.appendChild(barra);
+
+    var grade = no('div', 'resumo-grade');
+    [['Total', geral.total, ''], ['Recebido', geral.pago, 'verde'], ['Falta', geral.restante, 'ouro']].forEach(function (item) {
+      var d = no('div');
+      d.appendChild(no('div', 'r', item[0]));
+      d.appendChild(no('div', 'v ' + item[2], emReais(item[1])));
+      grade.appendChild(d);
+    });
+    cResumo.appendChild(grade);
+
+    var proxima = proximoPagamentoGeral();
+    if (proxima) {
+      cResumo.appendChild(no('div', 'linha-nota', 'Próximo pagamento previsto para ' + dataBr(proxima) + '.'));
+    }
+    if (geral.atrasados) {
+      var alerta = no('div', 'linha-nota vermelho',
+        geral.atrasados + ' cliente(s) com pagamento atrasado.');
+      cResumo.appendChild(alerta);
+    }
+    tela.appendChild(cResumo);
+
+    var cClientes = cartao('liso');
+    var topo = topoDeCartao('Clientes', '+ Novo', function () { abrirFolhaCliente(null); });
+    topo.style.padding = '16px 16px 0';
+    topo.style.marginBottom = '8px';
+    cClientes.appendChild(topo);
+
+    if (!estado.clientes.length) {
+      cClientes.appendChild(estadoVazio('Nenhum cliente ainda',
+        'Cadastre quem contratou seu serviço para acompanhar o que já foi pago e o que falta receber.'));
+      var b = botao('btn btn-ouro', 'Cadastrar primeiro cliente', function () { abrirFolhaCliente(null); });
+      b.style.margin = '0 16px 18px';
+      b.style.width = 'calc(100% - 32px)';
+      cClientes.appendChild(b);
+    } else {
+      estado.clientes.slice().sort(function (a, b) {
+        return resumoCliente(b.id).restante - resumoCliente(a.id).restante;
+      }).forEach(function (c) {
+        var r = resumoCliente(c.id);
+        var sit = situacaoCliente(c);
+        var linha = botao('linha', null, function () { abrirFichaCliente(c.id); });
+
+        var texto = no('div', 'linha-texto');
+        var titulo = no('div', 'linha-titulo', c.nome);
+        texto.appendChild(titulo);
+        var sub = no('div', 'linha-sub');
+        sub.appendChild(document.createTextNode(
+          servicosDoCliente(c.id).length + ' serviço(s)' + (c.telefone ? ' · ' + c.telefone : '')));
+        texto.appendChild(sub);
+
+        var fim = no('div', 'linha-fim');
+        fim.appendChild(no('div', 'linha-valor num ' + (r.restante > 0 ? 'ouro' : 'verde'), emReais(r.restante)));
+        var etiqueta = no('span', 'etiqueta ' + sit.classe, sit.texto);
+        fim.appendChild(etiqueta);
+
+        juntar(linha, selo(sit.classe === 'quitado' ? '#34D399' : sit.classe === 'atrasado' ? '#F87171' : '#E9B44C',
+          c.nome.charAt(0).toUpperCase()), texto, fim);
+        cClientes.appendChild(linha);
+      });
+    }
+    tela.appendChild(cClientes);
+  }
+
+  // ---------- Empreendedor: folhas ----------
+
+  function abrirFolhaCliente(id) {
+    var existente = id ? achar(estado.clientes, id) : null;
+    if (id && !existente) return;
+
+    abrirFolha(existente ? 'Editar cliente' : 'Novo cliente', function (folha) {
+      var forma = no('div');
+
+      var campoNome = entradaTexto(existente ? existente.nome : '', 'Nome do cliente', 60);
+      forma.appendChild(campo('Nome', campoNome));
+
+      var campoTelefone = entradaTexto(existente ? existente.telefone : '', '(51) 90000-0000', 30);
+      campoTelefone.type = 'tel';
+      campoTelefone.inputMode = 'tel';
+      forma.appendChild(campo('Telefone', campoTelefone));
+
+      var campoProximo = entradaData(existente && existente.proximoPagamento ? existente.proximoPagamento : '');
+      campoProximo.value = existente ? existente.proximoPagamento : '';
+      forma.appendChild(campo('Próximo pagamento previsto', campoProximo));
+
+      var campoObs = entradaTexto(existente ? existente.obs : '', 'Anotação (opcional)', 200);
+      forma.appendChild(campo('Observação', campoObs));
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
+        var nome = campoNome.value.trim();
+        if (!nome) { mostrarErro(forma, 'Escreva o nome do cliente.'); return; }
+
+        if (existente) {
+          existente.nome = nome;
+          existente.telefone = campoTelefone.value.trim();
+          existente.proximoPagamento = ehData(campoProximo.value) ? campoProximo.value : '';
+          existente.obs = campoObs.value.trim();
+        } else {
+          estado.clientes.push({
+            id: novoId(), nome: nome, telefone: campoTelefone.value.trim(),
+            obs: campoObs.value.trim(),
+            proximoPagamento: ehData(campoProximo.value) ? campoProximo.value : '',
+            criadoEm: Date.now()
+          });
+        }
+        salvar();
+        fecharFolha();
+        desenhar();
+        avisar(existente ? 'Cliente atualizado.' : 'Cliente cadastrado.');
+      }));
+
+      if (existente) {
+        acoes.appendChild(botao('btn btn-perigo', 'Excluir cliente', function () {
+          var quantos = servicosDoCliente(existente.id).length + pagamentosDoCliente(existente.id).length;
+          if (!confirm('Excluir ' + existente.nome + ' e seus ' + quantos + ' registro(s)? Não dá para desfazer.')) return;
+          estado.servicos = estado.servicos.filter(function (s) { return s.clienteId !== existente.id; });
+          estado.pagamentos = estado.pagamentos.filter(function (p) { return p.clienteId !== existente.id; });
+          estado.clientes = estado.clientes.filter(function (c) { return c.id !== existente.id; });
+          salvar();
+          fecharFolha();
+          desenhar();
+          avisar('Cliente excluído.');
+        }));
+      }
+
+      forma.appendChild(acoes);
+      folha.appendChild(forma);
+    });
+  }
+
+  var abaFicha = 'servicos';
+
+  function abrirFichaCliente(id) {
+    var cliente = achar(estado.clientes, id);
+    if (!cliente) return;
+    abaFicha = 'servicos';
+    montarFichaCliente(id);
+  }
+
+  function montarFichaCliente(id) {
+    var cliente = achar(estado.clientes, id);
+    if (!cliente) { fecharFolha(); return; }
+    var r = resumoCliente(id);
+
+    abrirFolha(cliente.nome, function (folha) {
+      if (cliente.telefone) {
+        var tel = no('p', 'linha-sub', cliente.telefone);
+        tel.style.textAlign = 'center';
+        tel.style.marginTop = '-10px';
+        folha.appendChild(tel);
+      }
+
+      var cResumo = cartao();
+      var grade = no('div', 'resumo-grade');
+      grade.style.marginTop = '0';
+      [['Total', r.total, ''], ['Pago', r.pago, 'verde'], ['Falta', r.restante, r.restante > 0 ? 'ouro' : 'verde']].forEach(function (item) {
+        var d = no('div');
+        d.appendChild(no('div', 'r', item[0]));
+        d.appendChild(no('div', 'v ' + item[2], emReais(item[1])));
+        grade.appendChild(d);
+      });
+      cResumo.appendChild(grade);
+      cResumo.appendChild(progresso(r.pago, r.total || 1, 'var(--verde)'));
+      if (cliente.proximoPagamento && r.restante > 0) {
+        cResumo.appendChild(no('div', 'linha-nota',
+          'Próximo pagamento previsto para ' + dataBr(cliente.proximoPagamento) +
+          (cliente.proximoPagamento < hojeTexto() ? ' — atrasado.' : '.')));
+      }
+      if (cliente.obs) cResumo.appendChild(no('div', 'linha-nota', cliente.obs));
+      folha.appendChild(cResumo);
+
+      var abas = no('div', 'aba-cliente');
+      [['servicos', 'Serviços'], ['pagamentos', 'Pagamentos']].forEach(function (a) {
+        var b = botao(null, a[1], function () {
+          if (abaFicha === a[0]) return;
+          abaFicha = a[0];
+          montarFichaCliente(id);
+        });
+        b.setAttribute('aria-selected', abaFicha === a[0] ? 'true' : 'false');
+        abas.appendChild(b);
+      });
+      folha.appendChild(abas);
+
+      var lista = cartao('liso');
+      if (abaFicha === 'servicos') {
+        var servicos = servicosDoCliente(id);
+        if (!servicos.length) {
+          lista.appendChild(estadoVazio('Nenhum serviço', 'Cadastre o que foi feito e o valor combinado.'));
+        } else {
+          servicos.forEach(function (s) {
+            var linha = botao('linha', null, function () { abrirFolhaServico(id, s.id); });
+            juntar(linha,
+              selo('#E9B44C', '#'),
+              juntar(no('div', 'linha-texto'),
+                no('div', 'linha-titulo', s.nome),
+                no('div', 'linha-sub', dataBr(s.data) + (s.obs ? ' · ' + s.obs : ''))),
+              juntar(no('div', 'linha-fim'), no('div', 'linha-valor num', emReais(s.valor)))
+            );
+            lista.appendChild(linha);
+          });
+        }
+      } else {
+        var pagamentos = pagamentosDoCliente(id);
+        if (!pagamentos.length) {
+          lista.appendChild(estadoVazio('Nenhum pagamento', 'Registre cada valor recebido com a data.'));
+        } else {
+          pagamentos.forEach(function (p) {
+            var servico = p.servicoId ? achar(estado.servicos, p.servicoId) : null;
+            var linha = botao('linha', null, function () { abrirFolhaPagamento(id, p.id); });
+            juntar(linha,
+              selo('#34D399', '✓'),
+              juntar(no('div', 'linha-texto'),
+                no('div', 'linha-titulo', dataBr(p.data)),
+                no('div', 'linha-sub', servico ? servico.nome : 'Pagamento' + (p.lancamentoId ? ' · lançado no caixa' : ''))),
+              juntar(no('div', 'linha-fim'), no('div', 'linha-valor num verde', '+ ' + emReais(p.valor)))
+            );
+            lista.appendChild(linha);
+          });
+        }
+      }
+      folha.appendChild(lista);
+
+      var acoes = no('div', 'acoes');
+      if (abaFicha === 'servicos') {
+        acoes.appendChild(botao('btn btn-ouro', '+ Novo serviço', function () { abrirFolhaServico(id, null); }));
+      } else {
+        acoes.appendChild(botao('btn btn-ouro', '+ Registrar pagamento', function () { abrirFolhaPagamento(id, null); }));
+      }
+      acoes.appendChild(botao('btn btn-fantasma', 'Editar cliente', function () {
+        empilhar({ tipo: 'aba', voltar: function () { montarFichaCliente(id); } });
+        abrirFolhaCliente(id);
+      }));
+      folha.appendChild(acoes);
+    });
+  }
+
+  function abrirFolhaServico(clienteId, servicoId) {
+    var existente = servicoId ? achar(estado.servicos, servicoId) : null;
+    empilhar({ tipo: 'aba', voltar: function () { montarFichaCliente(clienteId); } });
+
+    abrirFolha(existente ? 'Editar serviço' : 'Novo serviço', function (folha) {
+      var forma = no('div');
+
+      var campoValorEl = entradaValor(existente ? existente.valor : 0, true);
+      campoValorEl.style.color = 'var(--ouro)';
+      forma.appendChild(campo('Valor do serviço', campoValorEl));
+
+      var campoNome = entradaTexto(existente ? existente.nome : '', 'Ex.: Troca de embreagem', 60);
+      forma.appendChild(campo('Qual serviço', campoNome));
+
+      var campoData = entradaData(existente ? existente.data : hojeTexto());
+      forma.appendChild(campo('Data', campoData));
+
+      var campoObs = entradaTexto(existente ? existente.obs : '', 'Observação (opcional)', 200);
+      forma.appendChild(campo('Observação', campoObs));
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
+        var valor = digitosParaCentavos(campoValorEl.value);
+        var nome = campoNome.value.trim();
+        if (valor <= 0) { mostrarErro(forma, 'Informe o valor do serviço.'); return; }
+        if (!nome) { mostrarErro(forma, 'Escreva qual foi o serviço.'); return; }
+        if (!ehData(campoData.value)) { mostrarErro(forma, 'Escolha uma data válida.'); return; }
+
+        if (existente) {
+          existente.nome = nome;
+          existente.valor = valor;
+          existente.data = campoData.value;
+          existente.obs = campoObs.value.trim();
+        } else {
+          estado.servicos.push({
+            id: novoId(), clienteId: clienteId, nome: nome, valor: valor,
+            data: campoData.value, obs: campoObs.value.trim(), criadoEm: Date.now()
+          });
+        }
+        salvar();
+        voltarNavegacao();
+        avisar(existente ? 'Serviço atualizado.' : 'Serviço cadastrado.');
+      }));
+
+      if (existente) {
+        acoes.appendChild(botao('btn btn-perigo', 'Excluir serviço', function () {
+          if (!confirm('Excluir este serviço?')) return;
+          estado.servicos = estado.servicos.filter(function (s) { return s.id !== existente.id; });
+          estado.pagamentos.forEach(function (p) { if (p.servicoId === existente.id) p.servicoId = ''; });
+          salvar();
+          voltarNavegacao();
+          avisar('Serviço excluído.');
+        }));
+      }
+
+      forma.appendChild(acoes);
+      folha.appendChild(forma);
+    });
+  }
+
+  function abrirFolhaPagamento(clienteId, pagamentoId) {
+    var existente = pagamentoId ? achar(estado.pagamentos, pagamentoId) : null;
+    var r = resumoCliente(clienteId);
+    var servicos = servicosDoCliente(clienteId);
+    var lancarNoCaixa = !existente;
+    empilhar({ tipo: 'aba', voltar: function () { montarFichaCliente(clienteId); } });
+
+    abrirFolha(existente ? 'Editar pagamento' : 'Registrar pagamento', function (folha) {
+      var forma = no('div');
+
+      var campoValorEl = entradaValor(existente ? existente.valor : 0, true);
+      campoValorEl.style.color = 'var(--verde)';
+      forma.appendChild(campo('Valor recebido', campoValorEl));
+
+      if (!existente && r.restante > 0) {
+        var atalhos = no('div', 'chips');
+        atalhos.appendChild(botao('chip', 'Tudo: ' + emReais(r.restante), function () {
+          campoValorEl.value = emReais(r.restante);
+        }));
+        atalhos.appendChild(botao('chip', 'Metade', function () {
+          campoValorEl.value = emReais(Math.round(r.restante / 2));
+        }));
+        forma.appendChild(campo('Falta ' + emReais(r.restante), atalhos));
+      }
+
+      var campoData = entradaData(existente ? existente.data : hojeTexto());
+      forma.appendChild(campo('Data do pagamento', campoData));
+
+      var opcoesServico = [{ valor: '', rotulo: 'Sem serviço específico' }].concat(
+        servicos.map(function (s) { return { valor: s.id, rotulo: s.nome + ' — ' + emReais(s.valor) }; }));
+      var campoServico = entradaSelecao(opcoesServico, existente ? existente.servicoId : '');
+      forma.appendChild(campo('Referente a', campoServico));
+
+      var campoConta = null;
+      if (!existente && estado.contas.length) {
+        var marcar = botao('lembrar', null, function () {
+          lancarNoCaixa = !lancarNoCaixa;
+          marcar.setAttribute('aria-pressed', lancarNoCaixa ? 'true' : 'false');
+          marcar.querySelector('.caixinha').textContent = lancarNoCaixa ? '✓' : '';
+          campoConta.parentNode.style.display = lancarNoCaixa ? '' : 'none';
+        });
+        marcar.setAttribute('aria-pressed', 'true');
+        marcar.style.marginBottom = '14px';
+        marcar.appendChild(no('span', 'caixinha', '✓'));
+        marcar.appendChild(no('span', null, 'Lançar como entrada no caixa'));
+        forma.appendChild(marcar);
+
+        campoConta = entradaSelecao(opcoesDeConta(), estado.contas[0].id);
+        forma.appendChild(campo('Entrou em qual conta', campoConta));
+      }
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
+        var valor = digitosParaCentavos(campoValorEl.value);
+        if (valor <= 0) { mostrarErro(forma, 'Informe o valor recebido.'); return; }
+        if (!ehData(campoData.value)) { mostrarErro(forma, 'Escolha uma data válida.'); return; }
+
+        var cliente = achar(estado.clientes, clienteId);
+
+        if (existente) {
+          existente.valor = valor;
+          existente.data = campoData.value;
+          existente.servicoId = campoServico.value;
+        } else {
+          var lancamentoId = '';
+          if (lancarNoCaixa && campoConta) {
+            lancamentoId = novoId();
+            var servico = campoServico.value ? achar(estado.servicos, campoServico.value) : null;
+            estado.lancamentos.push({
+              id: lancamentoId,
+              tipo: 'entrada',
+              valor: valor,
+              descricao: (cliente ? cliente.nome : 'Cliente') + (servico ? ' — ' + servico.nome : ''),
+              categoria: 'Serviços',
+              data: campoData.value,
+              contaId: campoConta.value,
+              contaDestinoId: '',
+              criadoEm: Date.now()
+            });
+          }
+          estado.pagamentos.push({
+            id: novoId(), clienteId: clienteId, servicoId: campoServico.value,
+            valor: valor, data: campoData.value, lancamentoId: lancamentoId, criadoEm: Date.now()
+          });
+        }
+
+        salvar();
+        voltarNavegacao();
+        avisar(existente ? 'Pagamento atualizado.' : 'Pagamento registrado.');
+      }));
+
+      if (existente) {
+        acoes.appendChild(botao('btn btn-perigo', 'Excluir pagamento', function () {
+          if (!confirm('Excluir este pagamento?')) return;
+          if (existente.lancamentoId) {
+            estado.lancamentos = estado.lancamentos.filter(function (l) { return l.id !== existente.lancamentoId; });
+          }
+          estado.pagamentos = estado.pagamentos.filter(function (p) { return p.id !== existente.id; });
+          salvar();
+          voltarNavegacao();
+          avisar('Pagamento excluído.');
+        }));
+      }
+
+      forma.appendChild(acoes);
+      folha.appendChild(forma);
+    });
   }
 
   function blocoKpi(rotulo, valor, anterior, classeCor) {
@@ -1975,6 +3983,7 @@
       ['resumo', 'Resumo executivo', 'Patrimônio, fluxo e metas'],
       ['fluxo', 'Fluxo de caixa', 'Entradas e saídas detalhadas'],
       ['investimentos', 'Investimentos', 'Posição e rentabilidade'],
+      ['clientes', 'Clientes e cobranças', 'Serviços, pagos e em aberto'],
       ['ir', 'Apoio ao imposto de renda', 'Posição dos ativos e rendimentos']
     ].forEach(function (r) {
       var linha = botao('linha', null, function () { abrirRelatorio(r[0]); });
@@ -2012,6 +4021,25 @@
       cDados.appendChild(linha);
     });
 
+    var novidades = botao('linha', null, abrirNovidades);
+    juntar(novidades,
+      selo('#E9B44C', '★'),
+      juntar(no('div', 'linha-texto'),
+        no('div', 'linha-titulo', 'Novidades da versão ' + VERSAO),
+        no('div', 'linha-sub', 'O que mudou em cada atualização')));
+    cDados.appendChild(novidades);
+
+    var sairLinha = botao('linha', null, function () {
+      if (!confirm('Sair da conta? Seus dados continuam guardados neste aparelho.')) return;
+      sair();
+    });
+    juntar(sairLinha,
+      selo('#94A3B4', '⇥'),
+      juntar(no('div', 'linha-texto'),
+        no('div', 'linha-titulo', 'Sair da conta'),
+        no('div', 'linha-sub', sessao ? contaAtualEmail() : 'Nenhuma conta aberta')));
+    cDados.appendChild(sairLinha);
+
     var apagar = botao('linha', null, apagarTudo);
     juntar(apagar,
       selo('#F87171', '🗑'),
@@ -2028,6 +4056,33 @@
     rodape.appendChild(no('div', 'linha-nota', 'Caixa versão ' + VERSAO));
     rodape.appendChild(no('div', 'linha-nota', 'Seus dados ficam só neste aparelho, no navegador.'));
     tela.appendChild(rodape);
+  }
+
+  function contaAtualEmail() {
+    if (!sessao) return '';
+    var conta = achar(lerContas(), sessao.contaId);
+    return conta ? conta.email : '';
+  }
+
+  function abrirNovidades() {
+    abrirFolha('Novidades', function (folha) {
+      folha.appendChild(no('p', 'linha-sub', 'Histórico das versões do Caixa.'));
+      var lista = no('div');
+      lista.style.marginTop = '18px';
+      NOVIDADES.forEach(function (n) {
+        var bloco = no('div', 'novidade');
+        bloco.appendChild(no('div', 'v', 'Versão ' + n.versao + (n.versao === VERSAO ? ' · atual' : '')));
+        bloco.appendChild(no('div', 'q', dataBr(n.data)));
+        var ul = no('ul');
+        n.itens.forEach(function (item) { ul.appendChild(no('li', null, item)); });
+        bloco.appendChild(ul);
+        lista.appendChild(bloco);
+      });
+      folha.appendChild(lista);
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-fantasma', 'Fechar', function () { voltarNavegacao(); }));
+      folha.appendChild(acoes);
+    });
   }
 
   // ---------- Despacho ----------
@@ -2057,15 +4112,22 @@
     folha.classList.add('aberta');
     $('cortina').classList.add('aberta');
     document.body.style.overflow = 'hidden';
-    folhaAberta = true;
     folha.scrollTop = 0;
+
+    if (!folhaAberta) empilhar({ tipo: 'folha' });
+    folhaAberta = true;
+  }
+
+  function fecharFolhaEfeito() {
+    $('folha').classList.remove('aberta');
+    $('cortina').classList.remove('aberta');
+    document.body.style.overflow = telaEntrada && !$('entrada').classList.contains('escondida') ? 'hidden' : '';
+    folhaAberta = false;
   }
 
   function fecharFolha() {
-    $('folha').classList.remove('aberta');
-    $('cortina').classList.remove('aberta');
-    document.body.style.overflow = '';
-    folhaAberta = false;
+    if (topoEh('folha')) voltarNavegacao();
+    else fecharFolhaEfeito();
   }
 
   function campo(rotulo, controle) {
@@ -2194,7 +4256,7 @@
     // 2) Palavras conhecidas
     for (var i = 0; i < PISTAS.length; i++) {
       var categoria = PISTAS[i][0];
-      if (CATEGORIAS[tipo].indexOf(categoria) < 0) continue;
+      if (categoriasDe(tipo).indexOf(categoria) < 0) continue;
       var palavras = PISTAS[i][1];
       for (var j = 0; j < palavras.length; j++) {
         if (texto.indexOf(palavras[j]) >= 0) return categoria;
@@ -2244,7 +4306,7 @@
         var novo = coletar();
         novo.tipo = v;
         novo.categoriaTocada = categoriaTocada;
-        if (v !== 'transferencia' && CATEGORIAS[v].indexOf(novo.categoria) < 0) novo.categoria = 'Outros';
+        if (v !== 'transferencia' && categoriasDe(v).indexOf(novo.categoria) < 0) novo.categoria = 'Outros';
         abrirFolhaLancamento(id, novo);
       });
       forma.appendChild(tipos);
@@ -2258,7 +4320,7 @@
 
       var caixaChips = null;
       if (dados.tipo !== 'transferencia') {
-        caixaChips = grupoChips(CATEGORIAS[dados.tipo], dados.categoria, function (c) {
+        caixaChips = grupoChips(categoriasDe(dados.tipo), dados.categoria, function (c) {
           dados.categoria = c;
           categoriaTocada = true;
         });
@@ -2592,41 +4654,156 @@
 
   // ---------- Folha: orçamento ----------
 
-  function abrirFolhaOrcamento() {
-    abrirFolha('Orçamento', function (folha) {
+  function gastoDaCategoria(nomeCat) {
+    var total = 0;
+    lancamentosDoMes(mesAtivo.ano, mesAtivo.mes).forEach(function (l) {
+      if (l.tipo === 'saida' && l.categoria === nomeCat) total += l.valor;
+    });
+    return total;
+  }
+
+  function abrirFolhaOrcamento(rascunho) {
+    var dados = rascunho || {
+      geral: estado.orcamentos.geral,
+      categorias: Object.keys(estado.orcamentos.categorias).map(function (c) {
+        return { nome: c, valor: estado.orcamentos.categorias[c] };
+      })
+    };
+
+    abrirFolha('Orçamento do mês', function (folha) {
       var forma = no('div');
 
-      var campoGeral = entradaValor(estado.orcamentos.geral, false);
+      var campoGeral = entradaValor(dados.geral, false);
       forma.appendChild(campo('Teto de gastos do mês', campoGeral));
 
-      forma.appendChild(no('div', 'rotulo', 'Por categoria (opcional)'));
-      var lista = no('div');
-      lista.style.marginTop = '10px';
+      var topo = no('div', 'cartao-topo');
+      topo.style.marginBottom = '10px';
+      juntar(topo,
+        no('div', 'rotulo', 'Categorias'),
+        botao('cartao-acao', dados.categorias.length ? 'Escolher' : '+ Escolher categorias', function () {
+          dados.geral = digitosParaCentavos(campoGeral.value);
+          lerValoresCategorias();
+          empilhar({ tipo: 'aba', voltar: function () { abrirFolhaOrcamento(dados); } });
+          abrirSeletorCategorias(dados);
+        })
+      );
+      forma.appendChild(topo);
 
       var campos = {};
-      CATEGORIAS.saida.forEach(function (c) {
-        var linha = no('div', 'campo');
-        var l = no('label', null, c);
-        var i = entradaValor(estado.orcamentos.categorias[c] || 0, false);
-        campos[c] = i;
-        l.htmlFor = i.id;
-        juntar(linha, l, i);
-        lista.appendChild(linha);
-      });
-      forma.appendChild(lista);
+      function lerValoresCategorias() {
+        dados.categorias.forEach(function (c) {
+          if (campos[c.nome]) c.valor = digitosParaCentavos(campos[c.nome].value);
+        });
+      }
+
+      if (!dados.categorias.length) {
+        var vazio = no('p', 'linha-sub', 'Sem teto por categoria. Toque em "Escolher categorias" para separar quanto pode gastar em cada uma.');
+        vazio.style.marginBottom = '8px';
+        forma.appendChild(vazio);
+      } else {
+        dados.categorias.forEach(function (c) {
+          var linha = no('div', 'orc-item');
+          var rot = no('div', 'rot', c.nome);
+          var gasto = gastoDaCategoria(c.nome);
+          rot.appendChild(no('small', null, gasto > 0 ? 'gasto em ' + MESES[mesAtivo.mes] + ': ' + emReais(gasto) : 'sem gasto neste mês'));
+          var entrada = entradaValor(c.valor, false);
+          campos[c.nome] = entrada;
+          var tirar = botao('tirar', '×', function () {
+            lerValoresCategorias();
+            dados.categorias = dados.categorias.filter(function (x) { return x.nome !== c.nome; });
+            abrirFolhaOrcamento(dados);
+          });
+          tirar.setAttribute('aria-label', 'Tirar ' + c.nome);
+          juntar(linha, rot, entrada, tirar);
+          forma.appendChild(linha);
+        });
+      }
 
       var acoes = no('div', 'acoes');
-      acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
+      acoes.appendChild(botao('btn btn-ouro', 'Salvar orçamento', function () {
+        lerValoresCategorias();
         estado.orcamentos.geral = digitosParaCentavos(campoGeral.value);
         estado.orcamentos.categorias = {};
-        Object.keys(campos).forEach(function (c) {
-          var v = digitosParaCentavos(campos[c].value);
-          if (v > 0) estado.orcamentos.categorias[c] = v;
+        dados.categorias.forEach(function (c) {
+          if (c.valor > 0) estado.orcamentos.categorias[c.nome] = c.valor;
         });
         salvar();
         fecharFolha();
         desenhar();
         avisar('Orçamento salvo.');
+      }));
+      forma.appendChild(acoes);
+      folha.appendChild(forma);
+    });
+  }
+
+  function abrirSeletorCategorias(dados) {
+    abrirFolha('Categorias', function (folha) {
+      folha.appendChild(no('p', 'linha-sub', 'Marque as categorias que você quer limitar. O valor ao lado é o que já foi gasto em ' + MESES[mesAtivo.mes] + '.'));
+
+      var lista = no('div', 'cartao liso');
+      lista.style.marginTop = '14px';
+
+      function estaMarcada(nomeCat) {
+        return dados.categorias.some(function (c) { return c.nome === nomeCat; });
+      }
+
+      function desenharLista() {
+        lista.textContent = '';
+        categoriasDe('saida').forEach(function (nomeCat) {
+          var gasto = gastoDaCategoria(nomeCat);
+          var linha = botao('cat-linha', null, function () {
+            if (estaMarcada(nomeCat)) {
+              dados.categorias = dados.categorias.filter(function (c) { return c.nome !== nomeCat; });
+            } else {
+              dados.categorias.push({ nome: nomeCat, valor: gasto > 0 ? Math.ceil(gasto / 1000) * 1000 : 0 });
+            }
+            desenharLista();
+          });
+          linha.setAttribute('aria-pressed', estaMarcada(nomeCat) ? 'true' : 'false');
+          juntar(linha,
+            no('span', 'marca', estaMarcada(nomeCat) ? '✓' : ''),
+            no('span', 'nome', nomeCat),
+            no('span', 'gasto' + (gasto > 0 ? '' : ' zero'), gasto > 0 ? emReais(gasto) : '—')
+          );
+          lista.appendChild(linha);
+        });
+
+        var adicionar = botao('cat-linha', null, function () { abrirNovaCategoria(dados); });
+        var maisMarca = no('span', 'marca');
+        maisMarca.style.border = '0';
+        maisMarca.style.color = 'var(--ouro)';
+        maisMarca.appendChild(icone('mais', 18));
+        juntar(adicionar, maisMarca, no('span', 'nome ouro', 'Adicionar categoria'));
+        lista.appendChild(adicionar);
+      }
+      desenharLista();
+      folha.appendChild(lista);
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Pronto', function () { voltarNavegacao(); }));
+      folha.appendChild(acoes);
+    });
+  }
+
+  function abrirNovaCategoria(dados) {
+    empilhar({ tipo: 'aba', voltar: function () { abrirSeletorCategorias(dados); } });
+    abrirFolha('Nova categoria', function (folha) {
+      var forma = no('div');
+      var campoNome = entradaTexto('', 'Ex.: Pet, Academia, Obra', 30);
+      forma.appendChild(campo('Nome da categoria', campoNome));
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Criar e marcar', function () {
+        var nome = campoNome.value.trim().slice(0, 30);
+        if (!nome) { mostrarErro(forma, 'Escreva o nome da categoria.'); return; }
+        if (categoriasDe('saida').indexOf(nome) >= 0) { mostrarErro(forma, 'Essa categoria já existe.'); return; }
+
+        estado.categoriasExtras.saida.push(nome);
+        dados.categorias.push({ nome: nome, valor: 0 });
+        salvar();
+        voltarNavegacao();
+        avisar('Categoria ' + nome + ' criada.');
       }));
       forma.appendChild(acoes);
       folha.appendChild(forma);
@@ -2779,6 +4956,7 @@
       resumo: 'Resumo executivo',
       fluxo: 'Fluxo de caixa',
       investimentos: 'Investimentos',
+      clientes: 'Clientes e cobranças',
       ir: 'Apoio ao imposto de renda'
     };
 
@@ -2911,6 +5089,68 @@
       }
     }
 
+    if (tipo === 'clientes') {
+      var geral = resumoGeralClientes();
+      alvo.appendChild(no('h2', null, 'Resumo de todos os clientes'));
+      alvo.appendChild(par('Clientes cadastrados', String(estado.clientes.length)));
+      alvo.appendChild(par('Serviços prestados', String(estado.servicos.length)));
+      alvo.appendChild(par('Valor total dos serviços', emReais(geral.total)));
+      alvo.appendChild(par('Já recebido', emReais(geral.pago), 'verde'));
+      alvo.appendChild(par('Falta receber', emReais(geral.restante), geral.restante > 0 ? 'vermelho' : 'verde'));
+      var prox = proximoPagamentoGeral();
+      if (prox) alvo.appendChild(par('Próximo pagamento previsto', dataBr(prox)));
+
+      if (!estado.clientes.length) {
+        alvo.appendChild(no('p', 'rel-nota', 'Nenhum cliente cadastrado.'));
+      } else {
+        alvo.appendChild(no('h2', null, 'Por cliente'));
+        alvo.appendChild(tabela(
+          [{ rotulo: 'Cliente' }, { rotulo: 'Telefone' }, { rotulo: 'Total', numerica: true },
+           { rotulo: 'Pago', numerica: true }, { rotulo: 'Falta', numerica: true }, { rotulo: 'Situação' }],
+          estado.clientes.map(function (c) {
+            var r = resumoCliente(c.id);
+            var sit = situacaoCliente(c);
+            return [
+              celula(c.nome), celula(c.telefone || '—'), celula(emReais(r.total)),
+              celula(emReais(r.pago), 'verde'),
+              celula(emReais(r.restante), r.restante > 0 ? 'vermelho' : ''),
+              celula(sit.texto)
+            ];
+          })
+        ));
+
+        estado.clientes.forEach(function (c) {
+          var servicos = servicosDoCliente(c.id);
+          var pagamentos = pagamentosDoCliente(c.id);
+          if (!servicos.length && !pagamentos.length) return;
+          var r = resumoCliente(c.id);
+
+          alvo.appendChild(no('h2', null, c.nome));
+          alvo.appendChild(par('Total / Pago / Falta',
+            emReais(r.total) + ' · ' + emReais(r.pago) + ' · ' + emReais(r.restante)));
+          if (c.proximoPagamento) alvo.appendChild(par('Próximo pagamento', dataBr(c.proximoPagamento)));
+
+          if (servicos.length) {
+            alvo.appendChild(tabela(
+              [{ rotulo: 'Data' }, { rotulo: 'Serviço' }, { rotulo: 'Valor', numerica: true }],
+              servicos.slice().reverse().map(function (s) {
+                return [celula(dataBr(s.data)), celula(s.nome), celula(emReais(s.valor))];
+              })
+            ));
+          }
+          if (pagamentos.length) {
+            alvo.appendChild(tabela(
+              [{ rotulo: 'Data' }, { rotulo: 'Referente a' }, { rotulo: 'Pago', numerica: true }],
+              pagamentos.slice().reverse().map(function (p) {
+                var s = p.servicoId ? achar(estado.servicos, p.servicoId) : null;
+                return [celula(dataBr(p.data)), celula(s ? s.nome : '—'), celula(emReais(p.valor), 'verde')];
+              })
+            ));
+          }
+        });
+      }
+    }
+
     if (tipo === 'ir') {
       var ano = mesAtivo.ano;
       var fimDoAno = ano + '-12-31';
@@ -2962,11 +5202,17 @@
     $('relatorio').classList.add('aberto');
     document.body.style.overflow = 'hidden';
     $('relatorio').scrollTop = 0;
+    empilhar({ tipo: 'relatorio' });
+  }
+
+  function fecharRelatorioEfeito() {
+    $('relatorio').classList.remove('aberto');
+    document.body.style.overflow = '';
   }
 
   function fecharRelatorio() {
-    $('relatorio').classList.remove('aberto');
-    document.body.style.overflow = '';
+    if (topoEh('relatorio')) voltarNavegacao();
+    else fecharRelatorioEfeito();
   }
 
   // ---------- Backup, CSV e restauração ----------
@@ -3155,10 +5401,41 @@
     else if (folhaAberta) fecharFolha();
   });
 
+  window.addEventListener('popstate', aoVoltar);
+
   // ---------- Início ----------
 
-  carregar();
-  desenhar();
+  function comecar() {
+    iniciarNavegacao();
+
+    if (!cripto) {
+      // Sem WebCrypto (contexto não seguro) o app roda sem conta, como antes.
+      estado = limparEstado(dadosParaImportar() || estadoPadrao());
+      desenhar();
+      avisar('Abra o app por HTTPS para usar contas com senha.');
+      return;
+    }
+
+    var guardada = sessaoGuardada();
+    if (!guardada) { estado = estadoPadrao(); mostrarEntrada('abertura'); return; }
+
+    var conta = achar(lerContas(), guardada.contaId);
+    if (!conta) { limparSessao(); estado = estadoPadrao(); mostrarEntrada('abertura'); return; }
+
+    importarChave(guardada.chave).then(function (chave) {
+      return abrirCofre(conta, chave);
+    }).then(function () {
+      esconderEntrada();
+      desenhar();
+    }).catch(function () {
+      limparSessao();
+      estado = estadoPadrao();
+      mostrarEntrada('login');
+    });
+  }
+
+  estado = estadoPadrao();
+  comecar();
   registrarServiceWorker();
 })();
 </script>

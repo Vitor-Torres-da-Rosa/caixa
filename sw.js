@@ -4,6 +4,7 @@ const CACHE = 'caixa-v' + VERSAO;
 const ESSENCIAIS = [
   './',
   './index.html',
+  './config.js',
   './manifest.webmanifest',
   './icon.svg'
 ];

@@ -974,13 +974,22 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.1.1';
+  var VERSAO = '3.1.2';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.1.2',
+      data: '2026-09-05',
+      itens: [
+        'O link do e-mail de confirmação passa a voltar direto para o app.',
+        'Quando falta confirmar o e-mail, o app diz isso com todas as letras e oferece reenviar a mensagem.',
+        'Link de e-mail expirado ou já usado agora mostra o motivo em vez de falhar calado.'
+      ]
+    },
     {
       versao: '3.1.1',
       data: '2026-09-05',
@@ -1688,11 +1697,15 @@
 
   function erroDoServidor(corpo, status) {
     var msg = '';
+    var codigo = '';
     if (corpo && typeof corpo === 'object') {
       msg = corpo.error_description || corpo.msg || corpo.message || corpo.error || corpo.hint || '';
+      codigo = corpo.error_code || corpo.code || '';
     }
     if (!msg) msg = 'O servidor respondeu ' + status + '.';
-    return new Error(msg);
+    var e = new Error(msg);
+    e.codigo = String(codigo);
+    return e;
   }
 
   function pedirNuvem(caminho, opcoes) {
@@ -1736,8 +1749,24 @@
     });
   }
 
+  // O endereço de volta vai explícito em cada pedido que gera e-mail.
+  // Sem isso o Supabase usa o Site URL do painel, que pode estar apontando
+  // para outro lugar e derruba o link de confirmação num 404.
+  function comRetorno(caminho) {
+    return caminho + (caminho.indexOf('?') >= 0 ? '&' : '?') +
+      'redirect_to=' + encodeURIComponent(nuvemEnderecoRetorno());
+  }
+
+  function nuvemReenviarConfirmacao(email) {
+    return pedirNuvem(comRetorno('/auth/v1/resend'), {
+      metodo: 'POST',
+      token: false,
+      corpo: { email: normalizarEmail(email), type: 'signup' }
+    });
+  }
+
   function nuvemCadastrar(email, senha, nome) {
-    return pedirNuvem('/auth/v1/signup', {
+    return pedirNuvem(comRetorno('/auth/v1/signup'), {
       metodo: 'POST',
       token: false,
       corpo: {
@@ -1791,6 +1820,15 @@
 
   // Depois do Google, o token volta no pedaço da URL depois do #.
   function nuvemCapturarRetorno() {
+    // Link expirado ou já usado volta com o erro na parte de consulta.
+    var consulta = new URLSearchParams(location.search);
+    if (consulta.get('error') || consulta.get('error_description')) {
+      var motivo = consulta.get('error_description') || consulta.get('error');
+      history.replaceState(null, '', location.pathname);
+      avisar('Link do e-mail: ' + motivo);
+      return false;
+    }
+
     if (!location.hash || location.hash.length < 2) return false;
     var params = new URLSearchParams(location.hash.slice(1));
     var erro = params.get('error_description') || params.get('error');
@@ -2931,7 +2969,28 @@
         }).catch(function (e) {
           entrar.disabled = false;
           entrar.textContent = 'Entrar';
-          erroEntrada(forma, /Invalid login/i.test(e.message) ? 'E-mail ou senha incorretos.' : e.message);
+
+          if (e.codigo === 'email_not_confirmed' || /not confirmed/i.test(e.message)) {
+            erroEntrada(forma, 'Falta confirmar seu e-mail. Procure a mensagem na caixa de entrada, inclusive no spam.');
+            var reenviar = botao('btn-contorno', 'Reenviar e-mail de confirmação', function () {
+              reenviar.disabled = true;
+              reenviar.textContent = 'Enviando…';
+              nuvemReenviarConfirmacao(email).then(function () {
+                reenviar.textContent = 'E-mail reenviado';
+              }).catch(function (erro) {
+                reenviar.disabled = false;
+                reenviar.textContent = 'Reenviar e-mail de confirmação';
+                erroEntrada(forma, erro.codigo === 'over_email_send_rate_limit'
+                  ? 'Muitos e-mails em pouco tempo. Espere alguns minutos.'
+                  : erro.message);
+              });
+            });
+            if (!forma.querySelector('.btn-contorno')) forma.appendChild(reenviar);
+            return;
+          }
+
+          erroEntrada(forma, e.codigo === 'invalid_credentials' || /Invalid login/i.test(e.message)
+            ? 'E-mail ou senha incorretos.' : e.message);
         });
         return;
       }
@@ -3010,7 +3069,7 @@
         if (!email) { erroEntrada(forma2, 'Escreva seu e-mail.'); return; }
         b2.disabled = true;
         b2.textContent = 'Enviando…';
-        pedirNuvem('/auth/v1/recover', {
+        pedirNuvem(comRetorno('/auth/v1/recover'), {
           metodo: 'POST',
           token: false,
           corpo: { email: email, gotrue_meta_security: {} }
@@ -3261,7 +3320,8 @@
             if (r.precisaConfirmar) {
               criar.disabled = false;
               criar.textContent = 'Criar minha conta';
-              erroEntrada(forma, 'Conta criada. Confirme o e-mail que enviamos e depois entre.');
+              erroEntrada(forma, 'Conta criada! Enviamos um e-mail de confirmação para ' + cadastro.email +
+                '. Abra o link e depois volte para entrar.');
               return null;
             }
             return entrarComoUsuarioDaNuvem(true).then(function () {

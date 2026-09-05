@@ -299,4 +299,8 @@ alter default privileges in schema public revoke all on tables from anon;
 
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
-alter default privileges in schema public grant select, insert, update, delete on tables to authenticated;
+
+-- Repare que não damos privilégio automático para tabelas futuras. Isso é
+-- de propósito: combina com a opção "Automatically expose new tables"
+-- desligada no projeto. Tabela nova só entra na API depois de um grant
+-- explícito, feito de olho no que ela guarda.

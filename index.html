@@ -974,13 +974,25 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.0.0';
+  var VERSAO = '3.1.0';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.1.0',
+      data: '2026-09-05',
+      itens: [
+        'Conta na nuvem: os dados passam a ficar no servidor e voltam em qualquer aparelho.',
+        'Login por e-mail e senha, com recuperação por e-mail.',
+        'Botão de entrar com Google (funciona assim que o provedor for ligado no servidor).',
+        'Sincronização automática depois de cada alteração, e um botão para forçar na hora.',
+        'O que você apaga em um aparelho some nos outros.',
+        'Cada pessoa só enxerga os próprios dados, garantido pelo banco e não pelo aplicativo.'
+      ]
+    },
     {
       versao: '3.0.0',
       data: '2026-09-05',
@@ -1133,7 +1145,8 @@
       categoriasExtras: { saida: [], entrada: [] },
       clientes: [],
       servicos: [],
-      pagamentos: []
+      pagamentos: [],
+      excluidos: []
     };
   }
 
@@ -1147,11 +1160,23 @@
 
   function novoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
-  function inteiro(v) { return typeof v === 'number' && isFinite(v) ? Math.round(v) : 0; }
+  // O Postgres devolve bigint como texto em algumas configurações, então
+  // aceitamos número ou texto numérico antes de arredondar.
+  function inteiro(v) {
+    var n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v;
+    return typeof n === 'number' && isFinite(n) ? Math.round(n) : 0;
+  }
 
   function texto(v) { return typeof v === 'string' ? v : ''; }
 
   function ehData(v) { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v); }
+
+  // Aceita '2026-09-05' e também '2026-09-05T00:00:00Z', ficando só com o dia.
+  function soData(v) {
+    if (typeof v !== 'string') return '';
+    var m = /^(\d{4}-\d{2}-\d{2})/.exec(v);
+    return m ? m[1] : '';
+  }
 
   function limparEstado(bruto) {
     var limpo = estadoPadrao();
@@ -1190,7 +1215,7 @@
           nome: texto(c.nome).slice(0, 60),
           telefone: texto(c.telefone).slice(0, 30),
           obs: texto(c.obs).slice(0, 200),
-          proximoPagamento: ehData(c.proximoPagamento) ? c.proximoPagamento : '',
+          proximoPagamento: soData(c.proximoPagamento),
           criadoEm: inteiro(c.criadoEm) || Date.now()
         };
       });
@@ -1199,31 +1224,37 @@
     if (Array.isArray(bruto.servicos)) {
       limpo.servicos = bruto.servicos.filter(function (s) {
         return s && typeof s === 'object' && typeof s.id === 'string' &&
-          typeof s.clienteId === 'string' && inteiro(s.valor) > 0 && ehData(s.data);
+          typeof s.clienteId === 'string' && inteiro(s.valor) > 0 && soData(s.data);
       }).map(function (s) {
         return {
           id: s.id,
           clienteId: s.clienteId,
           nome: texto(s.nome).slice(0, 60) || 'Serviço',
           valor: inteiro(s.valor),
-          data: s.data,
+          data: soData(s.data),
           obs: texto(s.obs).slice(0, 200),
           criadoEm: inteiro(s.criadoEm) || Date.now()
         };
       });
     }
 
+    if (Array.isArray(bruto.excluidos)) {
+      limpo.excluidos = bruto.excluidos.filter(function (m) {
+        return m && typeof m.t === 'string' && typeof m.id === 'string' && m.id;
+      }).slice(0, 5000);
+    }
+
     if (Array.isArray(bruto.pagamentos)) {
       limpo.pagamentos = bruto.pagamentos.filter(function (p) {
         return p && typeof p === 'object' && typeof p.id === 'string' &&
-          typeof p.clienteId === 'string' && inteiro(p.valor) > 0 && ehData(p.data);
+          typeof p.clienteId === 'string' && inteiro(p.valor) > 0 && soData(p.data);
       }).map(function (p) {
         return {
           id: p.id,
           clienteId: p.clienteId,
           servicoId: texto(p.servicoId),
           valor: inteiro(p.valor),
-          data: p.data,
+          data: soData(p.data),
           lancamentoId: texto(p.lancamentoId),
           criadoEm: inteiro(p.criadoEm) || Date.now()
         };
@@ -1248,7 +1279,7 @@
       limpo.lancamentos = bruto.lancamentos.filter(function (l) {
         return l && typeof l === 'object' && typeof l.id === 'string' &&
           ['entrada', 'saida', 'transferencia'].indexOf(l.tipo) >= 0 &&
-          inteiro(l.valor) > 0 && ehData(l.data);
+          inteiro(l.valor) > 0 && soData(l.data);
       }).map(function (l) {
         return {
           id: l.id,
@@ -1256,7 +1287,7 @@
           valor: inteiro(l.valor),
           descricao: texto(l.descricao).slice(0, 80),
           categoria: texto(l.categoria) || 'Outros',
-          data: l.data,
+          data: soData(l.data),
           contaId: texto(l.contaId),
           contaDestinoId: texto(l.contaDestinoId),
           criadoEm: inteiro(l.criadoEm) || Date.now()
@@ -1269,9 +1300,9 @@
         return a && typeof a === 'object' && typeof a.id === 'string' && texto(a.nome);
       }).map(function (a) {
         var historico = Array.isArray(a.historico) ? a.historico.filter(function (p) {
-          return p && ehData(p.data) && inteiro(p.valor) >= 0;
+          return p && soData(p.data) && inteiro(p.valor) >= 0;
         }).map(function (p) {
-          return { data: p.data, valor: inteiro(p.valor) };
+          return { data: soData(p.data), valor: inteiro(p.valor) };
         }).sort(function (x, y) { return x.data < y.data ? -1 : 1; }) : [];
         return {
           id: a.id,
@@ -1292,7 +1323,7 @@
           nome: texto(m.nome).slice(0, 50),
           alvo: inteiro(m.alvo),
           guardado: Math.max(inteiro(m.guardado), 0),
-          prazo: ehData(m.prazo) ? m.prazo : ''
+          prazo: soData(m.prazo)
         };
       });
     }
@@ -1452,6 +1483,22 @@
 
   function salvar() {
     if (!sessao) return;
+
+    // Com servidor configurado, a identidade é a da nuvem e o cofre local
+    // vira cópia de trabalho, cifrada com a chave deste aparelho.
+    if (NUVEM.ligada) {
+      filaSalvar = filaSalvar.then(function () {
+        return cifrar(sessao.chave, estado).then(function (cofre) {
+          try { localStorage.setItem('caixa.cofre.' + sessao.contaId, cofre); } catch (e) { /* sem espaço */ }
+        });
+      }).then(function () {
+        agendarSincronia();
+      }).catch(function () {
+        avisar('Não foi possível salvar os dados.');
+      });
+      return filaSalvar;
+    }
+
     filaSalvar = filaSalvar.then(function () {
       return cifrar(sessao.chave, estado).then(function (cofre) {
         var contas = lerContas();
@@ -1461,6 +1508,8 @@
         conta.atualizadoEm = Date.now();
         gravarContas(contas);
       });
+    }).then(function () {
+      agendarSincronia();
     }).catch(function () {
       avisar('Não foi possível salvar os dados.');
     });
@@ -1570,10 +1619,513 @@
 
   function sair() {
     limparSessao();
+    if (NUVEM.ligada) nuvemEsquecer();
     sessao = null;
     estado = estadoPadrao();
     telaAtiva = 'inicio';
+    abaInicio = 'geral';
     mostrarEntrada('abertura');
+  }
+
+  // ---------- Nuvem: conexão com o Supabase ----------
+  //
+  // Sem biblioteca: são chamadas diretas às APIs do Supabase.
+  // GoTrue cuida do login em /auth/v1, PostgREST cuida dos dados em
+  // /rest/v1. A chave publicável vai em todo pedido; o token da pessoa
+  // vai no Authorization e é ele que faz o RLS liberar só as linhas dela.
+
+  var CFG = window.CAIXA_CONFIG || {};
+  var NUVEM = {
+    ligada: !!(CFG.supabaseUrl && CFG.supabaseAnonKey),
+    url: String(CFG.supabaseUrl || '').replace(/\/+$/, ''),
+    chave: String(CFG.supabaseAnonKey || '')
+  };
+  var CHAVE_NUVEM = 'caixa.nuvem.v3';
+  var CHAVE_APARELHO = 'caixa.aparelho.v3';
+
+  var sessaoNuvem = null;   // { access_token, refresh_token, expira_em, usuario }
+
+  function lerSessaoNuvem() {
+    try {
+      var bruto = localStorage.getItem(CHAVE_NUVEM);
+      return bruto ? JSON.parse(bruto) : null;
+    } catch (e) { return null; }
+  }
+
+  function gravarSessaoNuvem(dados) {
+    sessaoNuvem = dados;
+    try {
+      if (dados) localStorage.setItem(CHAVE_NUVEM, JSON.stringify(dados));
+      else localStorage.removeItem(CHAVE_NUVEM);
+    } catch (e) { /* sem espaço, segue só nesta aba */ }
+  }
+
+  function nuvemEsquecer() { gravarSessaoNuvem(null); }
+
+  function guardarSessaoDoServidor(resposta) {
+    if (!resposta || !resposta.access_token) return null;
+    var dados = {
+      access_token: resposta.access_token,
+      refresh_token: resposta.refresh_token || '',
+      expira_em: Date.now() + ((resposta.expires_in || 3600) * 1000),
+      usuario: {
+        id: resposta.user ? resposta.user.id : '',
+        email: resposta.user ? resposta.user.email : '',
+        nome: resposta.user && resposta.user.user_metadata ? (resposta.user.user_metadata.full_name || '') : ''
+      }
+    };
+    gravarSessaoNuvem(dados);
+    return dados;
+  }
+
+  function erroDoServidor(corpo, status) {
+    var msg = '';
+    if (corpo && typeof corpo === 'object') {
+      msg = corpo.error_description || corpo.msg || corpo.message || corpo.error || corpo.hint || '';
+    }
+    if (!msg) msg = 'O servidor respondeu ' + status + '.';
+    return new Error(msg);
+  }
+
+  function pedirNuvem(caminho, opcoes) {
+    opcoes = opcoes || {};
+    var cabecalhos = {
+      'apikey': NUVEM.chave,
+      'Content-Type': 'application/json'
+    };
+    if (opcoes.token !== false) {
+      var token = sessaoNuvem && sessaoNuvem.access_token ? sessaoNuvem.access_token : NUVEM.chave;
+      cabecalhos['Authorization'] = 'Bearer ' + token;
+    }
+    Object.keys(opcoes.cabecalhos || {}).forEach(function (k) { cabecalhos[k] = opcoes.cabecalhos[k]; });
+
+    return fetch(NUVEM.url + caminho, {
+      method: opcoes.metodo || 'GET',
+      headers: cabecalhos,
+      body: opcoes.corpo != null ? JSON.stringify(opcoes.corpo) : undefined
+    }).then(function (resposta) {
+      return resposta.text().then(function (texto) {
+        var corpo = null;
+        if (texto) { try { corpo = JSON.parse(texto); } catch (e) { corpo = texto; } }
+        if (!resposta.ok) throw erroDoServidor(corpo, resposta.status);
+        return corpo;
+      });
+    });
+  }
+
+  // Renova o token quando falta menos de um minuto, para o pedido
+  // seguinte não morrer no meio da sincronização.
+  function comTokenValido() {
+    if (!sessaoNuvem) return Promise.reject(new Error('Sem sessão na nuvem.'));
+    if (sessaoNuvem.expira_em - Date.now() > 60000) return Promise.resolve(sessaoNuvem);
+    if (!sessaoNuvem.refresh_token) return Promise.resolve(sessaoNuvem);
+    return pedirNuvem('/auth/v1/token?grant_type=refresh_token', {
+      metodo: 'POST',
+      token: false,
+      corpo: { refresh_token: sessaoNuvem.refresh_token }
+    }).then(function (r) {
+      return guardarSessaoDoServidor(r) || sessaoNuvem;
+    });
+  }
+
+  function nuvemCadastrar(email, senha, nome) {
+    return pedirNuvem('/auth/v1/signup', {
+      metodo: 'POST',
+      token: false,
+      corpo: {
+        email: normalizarEmail(email),
+        password: senha,
+        data: { full_name: nome }
+      }
+    }).then(function (r) {
+      // Com confirmação de e-mail ligada o servidor não devolve token.
+      return { sessao: guardarSessaoDoServidor(r), precisaConfirmar: !r.access_token };
+    });
+  }
+
+  function nuvemEntrar(email, senha) {
+    return pedirNuvem('/auth/v1/token?grant_type=password', {
+      metodo: 'POST',
+      token: false,
+      corpo: { email: normalizarEmail(email), password: senha }
+    }).then(function (r) {
+      var s = guardarSessaoDoServidor(r);
+      if (!s) throw new Error('O servidor não devolveu a sessão.');
+      return s;
+    });
+  }
+
+  function nuvemEnderecoRetorno() {
+    return location.origin + location.pathname;
+  }
+
+  function nuvemEntrarComGoogle() {
+    var destino = NUVEM.url + '/auth/v1/authorize?provider=google&redirect_to=' +
+      encodeURIComponent(nuvemEnderecoRetorno());
+    location.assign(destino);
+  }
+
+  // Depois do Google, o token volta no pedaço da URL depois do #.
+  function nuvemCapturarRetorno() {
+    if (!location.hash || location.hash.length < 2) return false;
+    var params = new URLSearchParams(location.hash.slice(1));
+    var erro = params.get('error_description') || params.get('error');
+    var token = params.get('access_token');
+    if (!token && !erro) return false;
+
+    history.replaceState(null, '', location.pathname + location.search);
+
+    if (erro) { avisar('Login social: ' + erro); return false; }
+
+    gravarSessaoNuvem({
+      access_token: token,
+      refresh_token: params.get('refresh_token') || '',
+      expira_em: Date.now() + (parseInt(params.get('expires_in'), 10) || 3600) * 1000,
+      usuario: { id: '', email: '', nome: '' }
+    });
+    return true;
+  }
+
+  function nuvemBuscarUsuario() {
+    return comTokenValido().then(function () {
+      return pedirNuvem('/auth/v1/user', {});
+    }).then(function (u) {
+      if (sessaoNuvem && u && u.id) {
+        sessaoNuvem.usuario = {
+          id: u.id,
+          email: u.email || '',
+          nome: (u.user_metadata && u.user_metadata.full_name) || ''
+        };
+        gravarSessaoNuvem(sessaoNuvem);
+      }
+      return u;
+    });
+  }
+
+  function nuvemSairDoServidor() {
+    if (!sessaoNuvem) return Promise.resolve();
+    return pedirNuvem('/auth/v1/logout', { metodo: 'POST' }).catch(function () { /* já expirou, tudo bem */ });
+  }
+
+  // Chave só deste aparelho, para o cofre local continuar cifrado quando
+  // a identidade é a da nuvem. Ela fica guardada ao lado dos dados, então
+  // vale como camada a mais, não como segredo: quem protege de verdade é
+  // a conta no servidor e o bloqueio do aparelho.
+  function chaveDoAparelho() {
+    var guardada = null;
+    try { guardada = localStorage.getItem(CHAVE_APARELHO); } catch (e) { guardada = null; }
+    if (guardada) return importarChave(guardada);
+    return novaChaveMestra().then(function (chave) {
+      return exportarChave(chave).then(function (bruta) {
+        try { localStorage.setItem(CHAVE_APARELHO, bruta); } catch (e) { /* segue sem guardar */ }
+        return chave;
+      });
+    });
+  }
+
+  // ---------- Nuvem: sincronização dos dados ----------
+
+  function ouNulo(v) { return v ? v : null; }
+
+  // Ordem importa: uma tabela só entra depois daquela de quem ela depende.
+  var TABELAS_SINCRONIA = ['contas', 'lancamentos', 'ativos', 'ativo_historico',
+                           'clientes', 'servicos', 'pagamentos', 'metas'];
+
+  function linhasDoEstado(uid) {
+    var historico = [];
+    estado.ativos.forEach(function (a) {
+      a.historico.forEach(function (p) {
+        historico.push({ id: a.id + '|' + p.data, user_id: uid, ativo_id: a.id, data: p.data, valor: p.valor });
+      });
+    });
+
+    return {
+      contas: estado.contas.map(function (c) {
+        return { id: c.id, user_id: uid, nome: c.nome, tipo: c.tipo, saldo_inicial: c.saldoInicial, cor: c.cor };
+      }),
+      lancamentos: estado.lancamentos.map(function (l) {
+        return {
+          id: l.id, user_id: uid, tipo: l.tipo, valor: l.valor, descricao: l.descricao,
+          categoria: l.categoria, data: l.data,
+          conta_id: ouNulo(l.contaId), conta_destino_id: ouNulo(l.contaDestinoId)
+        };
+      }),
+      ativos: estado.ativos.map(function (a) {
+        return { id: a.id, user_id: uid, nome: a.nome, classe: a.classe, aplicado: a.aplicado };
+      }),
+      ativo_historico: historico,
+      clientes: estado.clientes.map(function (c) {
+        return {
+          id: c.id, user_id: uid, nome: c.nome, telefone: c.telefone, obs: c.obs,
+          proximo_pagamento: ouNulo(c.proximoPagamento)
+        };
+      }),
+      servicos: estado.servicos.map(function (s) {
+        return {
+          id: s.id, user_id: uid, cliente_id: s.clienteId, nome: s.nome,
+          valor: s.valor, data: s.data, obs: s.obs
+        };
+      }),
+      pagamentos: estado.pagamentos.map(function (p) {
+        return {
+          id: p.id, user_id: uid, cliente_id: p.clienteId, servico_id: ouNulo(p.servicoId),
+          lancamento_id: ouNulo(p.lancamentoId), valor: p.valor, data: p.data
+        };
+      }),
+      metas: estado.metas.map(function (m) {
+        return { id: m.id, user_id: uid, nome: m.nome, alvo: m.alvo, guardado: m.guardado, prazo: ouNulo(m.prazo) };
+      })
+    };
+  }
+
+  function perfilParaLinha(uid) {
+    var p = estado.perfil;
+    return {
+      id: uid,
+      nome: p.nome,
+      reserva_meses: p.reservaMeses,
+      idade_atual: p.idadeAtual,
+      idade_aposentadoria: p.idadeAposentadoria,
+      aporte_mensal: p.aporteMensal,
+      rendimento_anual: p.rendimentoAnual,
+      orcamento_geral: estado.orcamentos.geral,
+      objetivos: p.objetivos || []
+    };
+  }
+
+  function enviarLinhas(tabela, linhas, aoConflito) {
+    if (!linhas.length) return Promise.resolve();
+    var caminho = '/rest/v1/' + tabela + (aoConflito ? '?on_conflict=' + aoConflito : '');
+    return pedirNuvem(caminho, {
+      metodo: 'POST',
+      corpo: linhas,
+      cabecalhos: { 'Prefer': 'resolution=merge-duplicates,return=minimal' }
+    });
+  }
+
+  function nuvemEnviar() {
+    if (!sessaoNuvem || !sessaoNuvem.usuario.id) return Promise.reject(new Error('Sem sessão na nuvem.'));
+    var uid = sessaoNuvem.usuario.id;
+    var linhas = linhasDoEstado(uid);
+    var agora = new Date().toISOString();
+    var tarefa = comTokenValido();
+
+    // Perfil e o teto geral do orçamento
+    tarefa = tarefa.then(function () { return enviarLinhas('perfis', [perfilParaLinha(uid)], 'id'); });
+
+    // Demais tabelas, na ordem das dependências
+    TABELAS_SINCRONIA.forEach(function (t) {
+      tarefa = tarefa.then(function () { return enviarLinhas(t, linhas[t], 'id'); });
+    });
+
+    // Orçamento por categoria e categorias criadas na mão: troca tudo,
+    // porque a chave é composta e some quando a pessoa desmarca.
+    tarefa = tarefa.then(function () {
+      return pedirNuvem('/rest/v1/orcamentos?user_id=eq.' + uid, { metodo: 'DELETE' });
+    }).then(function () {
+      var linhasOrc = Object.keys(estado.orcamentos.categorias).map(function (c) {
+        return { user_id: uid, categoria: c, valor: estado.orcamentos.categorias[c] };
+      });
+      return enviarLinhas('orcamentos', linhasOrc, 'user_id,categoria');
+    }).then(function () {
+      return pedirNuvem('/rest/v1/categorias_extras?user_id=eq.' + uid, { metodo: 'DELETE' });
+    }).then(function () {
+      var extras = [];
+      ['saida', 'entrada'].forEach(function (tipo) {
+        (estado.categoriasExtras[tipo] || []).forEach(function (nome) {
+          extras.push({ user_id: uid, tipo: tipo, nome: nome });
+        });
+      });
+      return enviarLinhas('categorias_extras', extras, 'user_id,tipo,nome');
+    });
+
+    // Marca como excluído o que a pessoa apagou aqui.
+    (estado.excluidos || []).forEach(function (marca) {
+      if (TABELAS_SINCRONIA.indexOf(marca.t) < 0) return;
+      tarefa = tarefa.then(function () {
+        return pedirNuvem('/rest/v1/' + marca.t + '?id=eq.' + encodeURIComponent(marca.id), {
+          metodo: 'PATCH',
+          corpo: { excluido_em: agora },
+          cabecalhos: { 'Prefer': 'return=minimal' }
+        });
+      });
+    });
+
+    return tarefa.then(function () {
+      estado.excluidos = [];
+      return true;
+    });
+  }
+
+  function nuvemBaixar() {
+    if (!sessaoNuvem || !sessaoNuvem.usuario.id) return Promise.reject(new Error('Sem sessão na nuvem.'));
+    var recolhido = {};
+
+    var tarefa = comTokenValido().then(function () {
+      return pedirNuvem('/rest/v1/perfis?select=*', {});
+    }).then(function (r) { recolhido.perfis = r || []; });
+
+    TABELAS_SINCRONIA.forEach(function (t) {
+      tarefa = tarefa.then(function () {
+        return pedirNuvem('/rest/v1/' + t + '?select=*&excluido_em=is.null', {});
+      }).then(function (r) { recolhido[t] = r || []; });
+    });
+
+    tarefa = tarefa.then(function () {
+      return pedirNuvem('/rest/v1/orcamentos?select=*', {});
+    }).then(function (r) { recolhido.orcamentos = r || []; })
+      .then(function () { return pedirNuvem('/rest/v1/categorias_extras?select=*', {}); })
+      .then(function (r) { recolhido.categorias_extras = r || []; });
+
+    return tarefa.then(function () { return montarEstadoDeLinhas(recolhido); });
+  }
+
+  function montarEstadoDeLinhas(r) {
+    var novo = estadoPadrao();
+
+    var perfil = (r.perfis || [])[0];
+    if (perfil) {
+      novo.perfil.nome = perfil.nome || '';
+      novo.perfil.reservaMeses = perfil.reserva_meses || 6;
+      novo.perfil.idadeAtual = perfil.idade_atual || 30;
+      novo.perfil.idadeAposentadoria = perfil.idade_aposentadoria || 60;
+      novo.perfil.aporteMensal = perfil.aporte_mensal || 0;
+      novo.perfil.rendimentoAnual = Number(perfil.rendimento_anual) || 8;
+      novo.perfil.objetivos = perfil.objetivos || [];
+      novo.orcamentos.geral = perfil.orcamento_geral || 0;
+    }
+
+    novo.contas = (r.contas || []).map(function (c) {
+      return { id: c.id, nome: c.nome, tipo: c.tipo, saldoInicial: c.saldo_inicial, cor: c.cor };
+    });
+
+    novo.lancamentos = (r.lancamentos || []).map(function (l) {
+      return {
+        id: l.id, tipo: l.tipo, valor: l.valor, descricao: l.descricao || '',
+        categoria: l.categoria || 'Outros', data: l.data,
+        contaId: l.conta_id || '', contaDestinoId: l.conta_destino_id || '',
+        criadoEm: Date.parse(l.criado_em) || Date.now()
+      };
+    });
+
+    var porAtivo = {};
+    (r.ativo_historico || []).forEach(function (p) {
+      (porAtivo[p.ativo_id] = porAtivo[p.ativo_id] || []).push({ data: p.data, valor: p.valor });
+    });
+    novo.ativos = (r.ativos || []).map(function (a) {
+      var h = (porAtivo[a.id] || []).sort(function (x, y) { return x.data < y.data ? -1 : 1; });
+      return {
+        id: a.id, nome: a.nome, classe: a.classe, aplicado: a.aplicado,
+        historico: h.length ? h : [{ data: hojeTexto(), valor: a.aplicado }]
+      };
+    });
+
+    novo.metas = (r.metas || []).map(function (m) {
+      return { id: m.id, nome: m.nome, alvo: m.alvo, guardado: m.guardado, prazo: m.prazo || '' };
+    });
+
+    novo.clientes = (r.clientes || []).map(function (c) {
+      return {
+        id: c.id, nome: c.nome, telefone: c.telefone || '', obs: c.obs || '',
+        proximoPagamento: c.proximo_pagamento || '',
+        criadoEm: Date.parse(c.criado_em) || Date.now()
+      };
+    });
+
+    novo.servicos = (r.servicos || []).map(function (s) {
+      return {
+        id: s.id, clienteId: s.cliente_id, nome: s.nome, valor: s.valor,
+        data: s.data, obs: s.obs || '', criadoEm: Date.parse(s.criado_em) || Date.now()
+      };
+    });
+
+    novo.pagamentos = (r.pagamentos || []).map(function (p) {
+      return {
+        id: p.id, clienteId: p.cliente_id, servicoId: p.servico_id || '',
+        lancamentoId: p.lancamento_id || '', valor: p.valor, data: p.data,
+        criadoEm: Date.parse(p.criado_em) || Date.now()
+      };
+    });
+
+    (r.orcamentos || []).forEach(function (o) { novo.orcamentos.categorias[o.categoria] = o.valor; });
+    (r.categorias_extras || []).forEach(function (c) {
+      if (novo.categoriasExtras[c.tipo]) novo.categoriasExtras[c.tipo].push(c.nome);
+    });
+
+    return limparEstado(novo);
+  }
+
+  // Registra o que foi apagado, para a nuvem apagar também.
+  function marcarExcluido(tabela, id) {
+    if (!NUVEM.ligada || !id) return;
+    if (!estado.excluidos) estado.excluidos = [];
+    estado.excluidos.push({ t: tabela, id: id });
+  }
+
+  var sincronizando = false;
+  var tempoSincronia = null;
+
+  function sincronizar(silenciosa) {
+    if (!NUVEM.ligada || !sessaoNuvem || !sessaoNuvem.usuario.id) return Promise.resolve(false);
+    if (sincronizando) return Promise.resolve(false);
+    sincronizando = true;
+
+    return nuvemEnviar().then(function () {
+      return nuvemBaixar();
+    }).then(function (doServidor) {
+      estado = doServidor;
+      return salvar();
+    }).then(function () {
+      sincronizando = false;
+      if (!silenciosa) avisar('Sincronizado com a nuvem.');
+      desenhar();
+      return true;
+    }).catch(function (e) {
+      sincronizando = false;
+      if (!silenciosa) avisar('Não sincronizou: ' + e.message);
+      return false;
+    });
+  }
+
+  // Guarda logo e manda para a nuvem pouco depois, juntando as alterações
+  // seguidas num pedido só.
+  function agendarSincronia() {
+    if (!NUVEM.ligada || !sessaoNuvem) return;
+    clearTimeout(tempoSincronia);
+    tempoSincronia = setTimeout(function () { sincronizar(true); }, 4000);
+  }
+
+  // Abre o cofre local do usuário da nuvem e entra no app.
+  function entrarComoUsuarioDaNuvem(primeiroAcesso) {
+    return nuvemBuscarUsuario().then(function () {
+      return chaveDoAparelho();
+    }).then(function (chave) {
+      var uid = sessaoNuvem.usuario.id;
+      sessao = { contaId: uid, chave: chave };
+      var cofre = null;
+      try { cofre = localStorage.getItem('caixa.cofre.' + uid); } catch (e) { cofre = null; }
+      if (!cofre) { estado = estadoPadrao(); return; }
+      return decifrar(chave, cofre).then(function (dados) {
+        estado = limparEstado(dados);
+      }).catch(function () {
+        estado = estadoPadrao();
+      });
+    }).then(function () {
+      if (!primeiroAcesso) return null;
+      // Conta nova: leva junto o que já estava neste aparelho.
+      var importar = dadosParaImportar();
+      if (importar && (importar.lancamentos.length || importar.contas.length)) {
+        estado = importar;
+        marcarImportado();
+      }
+      return null;
+    }).then(function () {
+      esconderEntrada();
+      telaAtiva = 'inicio';
+      iniciarNavegacao();
+      desenhar();
+      return sincronizar(true);
+    });
   }
 
   function achar(lista, id) {
@@ -2165,12 +2717,20 @@
     pai.appendChild(e);
   }
 
-  function avisoSocial() {
-    avisar('Entrar com Google, Apple ou Facebook precisa do servidor ligado.');
+  function acionarSocial(provedor) {
+    if (!NUVEM.ligada) {
+      avisar('Entrar com Google, Apple ou Facebook precisa do servidor ligado.');
+      return;
+    }
+    if (provedor !== 'google') {
+      avisar('Por enquanto só o Google está ligado no servidor.');
+      return;
+    }
+    nuvemEntrarComGoogle();
   }
 
-  function botaoSocial(rotulo, logo) {
-    var b = botao('social', null, avisoSocial);
+  function botaoSocial(rotulo, logo, provedor) {
+    var b = botao('social', null, function () { acionarSocial(provedor); });
     b.appendChild(logo);
     b.appendChild(no('span', null, rotulo));
     return b;
@@ -2247,12 +2807,14 @@
     fundo.appendChild(no('div', 'separador', 'ou continue com'));
 
     var sociais = no('div', 'sociais-linha');
-    sociais.appendChild(botaoSocial('Continuar com Google', logoGoogle()));
-    sociais.appendChild(botaoSocial('Continuar com Apple', logoApple()));
-    sociais.appendChild(botaoSocial('Continuar com Facebook', logoFacebook()));
+    sociais.appendChild(botaoSocial('Continuar com Google', logoGoogle(), 'google'));
+    sociais.appendChild(botaoSocial('Continuar com Apple', logoApple(), 'apple'));
+    sociais.appendChild(botaoSocial('Continuar com Facebook', logoFacebook(), 'facebook'));
     fundo.appendChild(sociais);
 
-    var nota = no('p', 'termos', 'Login social chega quando o servidor estiver ligado.');
+    var nota = no('p', 'termos', NUVEM.ligada
+      ? 'Apple e Facebook ainda não estão ligados no servidor.'
+      : 'Login social chega quando o servidor estiver ligado.');
     nota.style.marginTop = '10px';
     fundo.appendChild(nota);
 
@@ -2330,6 +2892,21 @@
       var senha = campoSenha.campo.value;
       if (!email || !senha) { erroEntrada(forma, 'Preencha e-mail e senha.'); return; }
 
+      if (NUVEM.ligada) {
+        entrar.disabled = true;
+        entrar.textContent = 'Entrando…';
+        nuvemEntrar(email, senha).then(function () {
+          return entrarComoUsuarioDaNuvem(false);
+        }).then(function () {
+          avisar('Bem-vindo de volta' + (estado.perfil.nome ? ', ' + estado.perfil.nome : '') + '.');
+        }).catch(function (e) {
+          entrar.disabled = false;
+          entrar.textContent = 'Entrar';
+          erroEntrada(forma, /Invalid login/i.test(e.message) ? 'E-mail ou senha incorretos.' : e.message);
+        });
+        return;
+      }
+
       var conta = null;
       lerContas().forEach(function (c) { if (c.email === email) conta = c; });
       if (!conta) { erroEntrada(forma, 'Não achei uma conta com esse e-mail neste aparelho.'); return; }
@@ -2356,9 +2933,10 @@
 
     forma.appendChild(no('div', 'separador', 'ou continue com'));
     var redondas = no('div', 'sociais-redondas');
-    [logoGoogle(), logoApple(), logoFacebook()].forEach(function (logo) {
-      var b = botao('social-redonda', null, avisoSocial);
-      b.appendChild(logo);
+    [[logoGoogle(), 'google'], [logoApple(), 'apple'], [logoFacebook(), 'facebook']].forEach(function (par) {
+      var b = botao('social-redonda', null, function () { acionarSocial(par[1]); });
+      b.setAttribute('aria-label', 'Entrar com ' + par[1]);
+      b.appendChild(par[0]);
       redondas.appendChild(b);
     });
     forma.appendChild(redondas);
@@ -2376,6 +2954,47 @@
     voltar.appendChild(icone('voltar'));
     voltar.setAttribute('aria-label', 'Voltar');
     folha.appendChild(voltar);
+
+    // Com servidor, quem faz a recuperação é ele, por e-mail.
+    if (NUVEM.ligada) {
+      var h2 = no('h1', 'ent-titulo');
+      h2.style.textAlign = 'left';
+      h2.style.marginTop = '0';
+      h2.appendChild(document.createTextNode('Esqueceu'));
+      h2.appendChild(no('span', 'ouro', 'a senha?'));
+      folha.appendChild(h2);
+
+      var p2 = no('p', 'ent-texto', 'Diga seu e-mail que enviamos um link para você criar uma senha nova.');
+      p2.style.textAlign = 'left';
+      p2.style.marginBottom = '24px';
+      folha.appendChild(p2);
+
+      var forma2 = no('div');
+      var campoEmail2 = campoEntrada('email', 'email', 'E-mail da conta', '');
+      forma2.appendChild(campoEmail2);
+
+      var b2 = botao('btn-dourado', 'Enviar link', function () {
+        var email = normalizarEmail(campoEmail2.campo.value);
+        if (!email) { erroEntrada(forma2, 'Escreva seu e-mail.'); return; }
+        b2.disabled = true;
+        b2.textContent = 'Enviando…';
+        pedirNuvem('/auth/v1/recover', {
+          metodo: 'POST',
+          token: false,
+          corpo: { email: email, gotrue_meta_security: {} }
+        }).then(function () {
+          b2.textContent = 'Link enviado';
+          erroEntrada(forma2, 'Se existir conta com esse e-mail, o link chegou na caixa de entrada.');
+        }).catch(function (e) {
+          b2.disabled = false;
+          b2.textContent = 'Enviar link';
+          erroEntrada(forma2, e.message);
+        });
+      });
+      forma2.appendChild(b2);
+      folha.appendChild(forma2);
+      return;
+    }
 
     var h = no('h1', 'ent-titulo');
     h.style.textAlign = 'left';
@@ -2605,6 +3224,42 @@
         criar.disabled = true;
         criar.textContent = 'Criando…';
 
+        if (NUVEM.ligada) {
+          nuvemCadastrar(cadastro.email, cadastro.senha, cadastro.nome).then(function (r) {
+            if (r.precisaConfirmar) {
+              criar.disabled = false;
+              criar.textContent = 'Criar minha conta';
+              erroEntrada(forma, 'Conta criada. Confirme o e-mail que enviamos e depois entre.');
+              return null;
+            }
+            return entrarComoUsuarioDaNuvem(true).then(function () {
+              estado.perfil.nome = cadastro.tratamento;
+              estado.perfil.idadeAtual = cadastro.idade;
+              if (cadastro.renda > 0 && !estado.perfil.aporteMensal) {
+                estado.perfil.aporteMensal = Math.round(cadastro.renda * 0.1);
+              }
+              if (cadastro.objetivos.indexOf('Montar reserva') >= 0 && !estado.metas.length && cadastro.renda > 0) {
+                estado.metas.push({
+                  id: novoId(), nome: 'Reserva de emergência',
+                  alvo: cadastro.renda * 6, guardado: 0, prazo: ''
+                });
+              }
+              estado.perfil.objetivos = cadastro.objetivos.slice();
+              cadastro = null;
+              desenhar();
+              return salvar();
+            }).then(function () {
+              avisar('Conta criada. Tudo pronto!');
+            });
+          }).catch(function (e) {
+            criar.disabled = false;
+            criar.textContent = 'Criar minha conta';
+            erroEntrada(forma, /already registered|already been registered/i.test(e.message)
+              ? 'Já existe uma conta com esse e-mail.' : e.message);
+          });
+          return;
+        }
+
         criarConta(cadastro.nome, cadastro.email, cadastro.senha).then(function (r) {
           cadastro.codigo = r.codigo;
           return abrirCofre(r.conta, r.chave).then(function () {
@@ -2658,7 +3313,15 @@
     },
     privacidade: {
       titulo: 'Política de Privacidade',
-      partes: [
+      partes: NUVEM.ligada ? [
+        'Com a conta ligada, seus dados ficam em duas casas: neste aparelho e no servidor do Caixa, hospedado no Supabase, na região de São Paulo.',
+        'No servidor cada linha carrega o dono. O banco aplica uma regra chamada Row Level Security que devolve apenas as linhas de quem está logado. Isso vale mesmo se o aplicativo pedir outra coisa, porque a checagem é feita pelo banco, não pelo aplicativo.',
+        'Quem administra o servidor consegue ler os dados, como em qualquer aplicativo de finanças. Se você prefere que ninguém além de você leia, não use a conta na nuvem: sem servidor configurado o app guarda tudo cifrado só no aparelho.',
+        'A cópia que fica no seu aparelho é cifrada com AES-GCM de 256 bits, mas a chave dessa cópia mora no próprio aparelho. Ela atrapalha uma leitura casual do armazenamento, e não substitui o bloqueio de tela do celular.',
+        'A senha da sua conta nunca chega ao aplicativo em texto: quem cuida dela é o serviço de autenticação do Supabase.',
+        'Não há rastreamento, publicidade, cookies de terceiros ou envio de estatísticas.',
+        'Você pode sair da conta e apagar tudo pelo menu Mais, e baixar um backup em JSON a qualquer momento. Atenção: o arquivo de backup sai sem criptografia, então guarde em lugar seguro.'
+      ] : [
         'Hoje o Caixa funciona inteiramente dentro do seu aparelho. Não existe servidor, não há cadastro em nenhum lugar e nada do que você digita sai do navegador.',
         'Seus dados são gravados no armazenamento local do navegador, cifrados com AES-GCM de 256 bits. A chave é derivada da sua senha com PBKDF2 e nunca é guardada em texto puro.',
         'Se você marcar "Lembrar de mim", a chave fica guardada no aparelho para abrir o app direto. Sem marcar, ela vale só enquanto a aba estiver aberta.',
@@ -3132,6 +3795,9 @@
         acoes.appendChild(botao('btn btn-perigo', 'Excluir cliente', function () {
           var quantos = servicosDoCliente(existente.id).length + pagamentosDoCliente(existente.id).length;
           if (!confirm('Excluir ' + existente.nome + ' e seus ' + quantos + ' registro(s)? Não dá para desfazer.')) return;
+          estado.servicos.forEach(function (s) { if (s.clienteId === existente.id) marcarExcluido('servicos', s.id); });
+          estado.pagamentos.forEach(function (p) { if (p.clienteId === existente.id) marcarExcluido('pagamentos', p.id); });
+          marcarExcluido('clientes', existente.id);
           estado.servicos = estado.servicos.filter(function (s) { return s.clienteId !== existente.id; });
           estado.pagamentos = estado.pagamentos.filter(function (p) { return p.clienteId !== existente.id; });
           estado.clientes = estado.clientes.filter(function (c) { return c.id !== existente.id; });
@@ -3300,6 +3966,7 @@
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir serviço', function () {
           if (!confirm('Excluir este serviço?')) return;
+          marcarExcluido('servicos', existente.id);
           estado.servicos = estado.servicos.filter(function (s) { return s.id !== existente.id; });
           estado.pagamentos.forEach(function (p) { if (p.servicoId === existente.id) p.servicoId = ''; });
           salvar();
@@ -3408,8 +4075,10 @@
         acoes.appendChild(botao('btn btn-perigo', 'Excluir pagamento', function () {
           if (!confirm('Excluir este pagamento?')) return;
           if (existente.lancamentoId) {
+            marcarExcluido('lancamentos', existente.lancamentoId);
             estado.lancamentos = estado.lancamentos.filter(function (l) { return l.id !== existente.lancamentoId; });
           }
+          marcarExcluido('pagamentos', existente.id);
           estado.pagamentos = estado.pagamentos.filter(function (p) { return p.id !== existente.id; });
           salvar();
           voltarNavegacao();
@@ -4022,6 +4691,21 @@
       cDados.appendChild(linha);
     });
 
+    if (NUVEM.ligada) {
+      var sinc = botao('linha', null, function () {
+        avisar('Sincronizando…');
+        sincronizar(false);
+      });
+      juntar(sinc,
+        selo('#34D399', '↻'),
+        juntar(no('div', 'linha-texto'),
+          no('div', 'linha-titulo', 'Sincronizar agora'),
+          no('div', 'linha-sub', sessaoNuvem && sessaoNuvem.usuario.email
+            ? 'Conectado como ' + sessaoNuvem.usuario.email
+            : 'Enviar e trazer os dados do servidor')));
+      cDados.appendChild(sinc);
+    }
+
     var novidades = botao('linha', null, abrirNovidades);
     juntar(novidades,
       selo('#E9B44C', '★'),
@@ -4032,13 +4716,14 @@
 
     var sairLinha = botao('linha', null, function () {
       if (!confirm('Sair da conta? Seus dados continuam guardados neste aparelho.')) return;
+      if (NUVEM.ligada) { nuvemSairDoServidor().then(sair); return; }
       sair();
     });
     juntar(sairLinha,
       selo('#94A3B4', '⇥'),
       juntar(no('div', 'linha-texto'),
         no('div', 'linha-titulo', 'Sair da conta'),
-        no('div', 'linha-sub', sessao ? contaAtualEmail() : 'Nenhuma conta aberta')));
+        no('div', 'linha-sub', contaAtualEmail() || 'Nenhuma conta aberta')));
     cDados.appendChild(sairLinha);
 
     var apagar = botao('linha', null, apagarTudo);
@@ -4055,11 +4740,14 @@
     rodape.style.textAlign = 'center';
     rodape.style.padding = '10px 0 4px';
     rodape.appendChild(no('div', 'linha-nota', 'Caixa versão ' + VERSAO));
-    rodape.appendChild(no('div', 'linha-nota', 'Seus dados ficam só neste aparelho, no navegador.'));
+    rodape.appendChild(no('div', 'linha-nota', NUVEM.ligada
+      ? 'Seus dados ficam neste aparelho e na sua conta no servidor.'
+      : 'Seus dados ficam só neste aparelho, no navegador.'));
     tela.appendChild(rodape);
   }
 
   function contaAtualEmail() {
+    if (NUVEM.ligada) return sessaoNuvem && sessaoNuvem.usuario ? sessaoNuvem.usuario.email : '';
     if (!sessao) return '';
     var conta = achar(lerContas(), sessao.contaId);
     return conta ? conta.email : '';
@@ -4403,6 +5091,7 @@
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir lançamento', function () {
           if (!confirm('Excluir este lançamento? Não dá para desfazer.')) return;
+          marcarExcluido('lancamentos', existente.id);
           estado.lancamentos = estado.lancamentos.filter(function (l) { return l.id !== existente.id; });
           salvar();
           fecharFolha();
@@ -4498,6 +5187,7 @@
             return;
           }
           if (!confirm('Excluir a conta ' + existente.nome + '?')) return;
+          marcarExcluido('contas', existente.id);
           estado.contas = estado.contas.filter(function (c) { return c.id !== existente.id; });
           salvar();
           fecharFolha();
@@ -4568,6 +5258,10 @@
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir ativo', function () {
           if (!confirm('Excluir ' + existente.nome + '? Não dá para desfazer.')) return;
+          marcarExcluido('ativos', existente.id);
+          estado.ativos.forEach(function (a) {
+            if (a.id === existente.id) a.historico.forEach(function (h) { marcarExcluido('ativo_historico', a.id + '|' + h.data); });
+          });
           estado.ativos = estado.ativos.filter(function (a) { return a.id !== existente.id; });
           salvar();
           fecharFolha();
@@ -4640,6 +5334,7 @@
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir meta', function () {
           if (!confirm('Excluir a meta ' + existente.nome + '?')) return;
+          marcarExcluido('metas', existente.id);
           estado.metas = estado.metas.filter(function (m) { return m.id !== existente.id; });
           salvar();
           fecharFolha();
@@ -5414,6 +6109,20 @@
       estado = limparEstado(dadosParaImportar() || estadoPadrao());
       desenhar();
       avisar('Abra o app por HTTPS para usar contas com senha.');
+      return;
+    }
+
+    if (NUVEM.ligada) {
+      var veioDoGoogle = nuvemCapturarRetorno();
+      sessaoNuvem = lerSessaoNuvem();
+      if (!sessaoNuvem) { estado = estadoPadrao(); mostrarEntrada('abertura'); return; }
+      entrarComoUsuarioDaNuvem(veioDoGoogle && !localStorage.getItem('caixa.importado.v3'))
+        .catch(function () {
+          nuvemEsquecer();
+          sessao = null;
+          estado = estadoPadrao();
+          mostrarEntrada('login');
+        });
       return;
     }
 

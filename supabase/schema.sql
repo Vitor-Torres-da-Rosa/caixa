@@ -124,6 +124,7 @@ create table if not exists public.ativo_historico (
   valor         bigint      not null check (valor >= 0),
   criado_em     timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
+  excluido_em   timestamptz,
   unique (ativo_id, data)
 );
 

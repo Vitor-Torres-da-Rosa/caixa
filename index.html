@@ -1341,13 +1341,23 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.6.0';
+  var VERSAO = '3.6.1';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.6.1',
+      data: '2026-09-06',
+      itens: [
+        'Na parcela paga, o número em verde passa a ser o que entrou de verdade, não o valor combinado.',
+        'Quando os dois são diferentes, o subtítulo mostra em quanto a parcela tinha sido combinada.',
+        'Parcela quitada com a sobra de outro pagamento aparece marcada como tal.',
+        'A data mostrada numa parcela paga é a do pagamento, não a do vencimento.'
+      ]
+    },
     {
       versao: '3.6.0',
       data: '2026-09-06',
@@ -5340,14 +5350,27 @@
             var servicoP = p.servicoId ? achar(estado.servicos, p.servicoId) : null;
             var parcial = parcelaParcial(p);
             var jurosP = jurosDaParcela(p);
-            var sub = (paga ? 'Paga' : vencida ? 'Venceu' : 'Vence') + ' em ' + dataBr(p.vencimento);
+            var recebido = pagoNaParcela(p);
+            // Numa parcela paga, o número em verde é o que entrou de verdade.
+            // Quando ela foi coberta pela sobra de outro pagamento, não há
+            // dinheiro lançado nela, então mostramos o valor combinado.
+            var comDinheiro = paga && recebido > 0;
+            var mostrar = paga ? (comDinheiro ? recebido : p.valor) : p.valor + jurosP;
+
+            var sub = (paga ? 'Paga' : vencida ? 'Venceu' : 'Vence') + ' em ' +
+              dataBr(paga && p.quitadaEm ? p.quitadaEm : p.vencimento);
             if (parcial) sub = 'Faltam ' + emReais(faltaNaParcela(p)) + ' · ' + sub.toLowerCase();
+            if (comDinheiro && recebido !== p.valor) sub += ' · combinada em ' + emReais(p.valor);
+            if (paga && !comDinheiro) sub += ' · coberta por outro pagamento';
             if (jurosP > 0) sub += ' · ' + emReais(jurosP) + ' de juros';
             if (servicoP) sub += ' · ' + servicoP.nome;
 
             var linha = botao('linha' + (vencida ? ' atrasada' : ''), null, function () {
-              if (paga) { abrirFolhaPagamento(id, p.pagamentoId || pagamentoDaParcela(p)); return; }
-              abrirFolhaParcela(id, p.id);
+              if (!paga) { abrirFolhaParcela(id, p.id); return; }
+              var recibo = p.pagamentoId || pagamentoDaParcela(p);
+              if (recibo) { abrirFolhaPagamento(id, recibo); return; }
+              avisarCaixa('Parcela ' + p.numero + ' de ' + p.total,
+                'Ela foi quitada com o que sobrou de outro pagamento, então não tem um recebimento próprio para abrir.');
             });
             juntar(linha,
               selo(paga ? '#3DDC84' : vencida ? '#FF6B6B' : parcial ? '#38BDF8' : '#E9B44C',
@@ -5357,7 +5380,7 @@
                 no('div', 'linha-sub', sub)),
               juntar(no('div', 'linha-fim'),
                 no('div', 'linha-valor num' + (paga ? ' verde' : vencida ? ' vermelho' : ''),
-                  emReais(paga ? p.valor : p.valor + jurosP)))
+                  emReais(mostrar)))
             );
             lista.appendChild(linha);
           });

@@ -397,6 +397,23 @@
 
   .puxador { width: 38px; height: 4px; border-radius: 999px; background: rgba(233,180,76,.4); margin: 6px auto 14px; }
   .folha-titulo { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 16px; }
+  .folha-titulo.com-acao {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .folha-titulo .titulo-acao {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    color: var(--suave);
+  }
+  .folha-titulo .titulo-acao:active { background: var(--cartao-2); color: var(--ouro); }
+  .folha-titulo .titulo-acao svg { width: 16px; height: 16px; }
 
   .campo { margin-bottom: 14px; }
   .campo > label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--suave); margin-bottom: 7px; }
@@ -1341,13 +1358,21 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.6.3';
+  var VERSAO = '3.6.4';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.6.4',
+      data: '2026-09-06',
+      itens: [
+        'Na ficha do cliente, editar virou um lápis ao lado do nome.',
+        'O botão grande de falar no WhatsApp saiu da ficha: o ícone verde na lista de clientes já faz isso.'
+      ]
+    },
     {
       versao: '3.6.3',
       data: '2026-09-06',
@@ -5344,6 +5369,16 @@
     var atraso = atrasoDoCliente(id);
 
     abrirFolha(cliente.nome, function (folha) {
+      var tituloEl = $('folhaTitulo');
+      tituloEl.classList.add('com-acao');
+      var lapisCliente = botao('titulo-acao', null, function () {
+        empilhar({ tipo: 'aba', voltar: function () { montarFichaCliente(id); } });
+        abrirFolhaCliente(id);
+      });
+      lapisCliente.setAttribute('aria-label', 'Editar ' + cliente.nome);
+      lapisCliente.appendChild(icone('lapis'));
+      tituloEl.appendChild(lapisCliente);
+
       var fones = telefonesDoCliente(cliente);
       if (fones.length) {
         var tel = no('p', 'linha-sub', fones.map(function (t) {
@@ -5538,19 +5573,6 @@
         acoes.appendChild(botao('btn btn-ouro', '+ Registrar pagamento', function () { abrirFolhaPagamento(id, null); }));
       }
 
-      if (r.restante > 0 && temWhatsapp(cliente)) {
-        var whats = botao('btn-whats', null, function () {
-          abrirWhatsapp(cliente, mensagemDeCobranca(cliente));
-        });
-        whats.appendChild(iconeWhatsapp());
-        whats.appendChild(no('span', null, atraso.vencidas.length ? 'Cobrar pelo WhatsApp' : 'Falar no WhatsApp'));
-        acoes.appendChild(whats);
-      }
-
-      acoes.appendChild(botao('btn btn-fantasma', 'Editar cliente', function () {
-        empilhar({ tipo: 'aba', voltar: function () { montarFichaCliente(id); } });
-        abrirFolhaCliente(id);
-      }));
       folha.appendChild(acoes);
     });
   }

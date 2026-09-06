@@ -180,6 +180,7 @@ create table if not exists public.clientes (
   telefone           text        not null default '',
   obs                text        not null default '',
   whatsapp           boolean     not null default true,
+  telefones          jsonb       not null default '[]',
   proximo_pagamento  date,
   criado_em          timestamptz not null default now(),
   atualizado_em      timestamptz not null default now(),
@@ -205,6 +206,7 @@ create table if not exists public.pagamentos (
   user_id       uuid        not null default auth.uid() references auth.users (id) on delete cascade,
   cliente_id    text        not null references public.clientes (id) on delete cascade,
   servico_id    text        references public.servicos (id) on delete set null,
+  parcela_id    text,
   lancamento_id text        references public.lancamentos (id) on delete set null,
   valor         bigint      not null check (valor > 0),
   data          date        not null,
@@ -224,6 +226,9 @@ create table if not exists public.parcelas (
   total         smallint    not null check (total >= 1),
   valor         bigint      not null check (valor > 0),
   vencimento    date        not null,
+  minimo        bigint      not null default 0 check (minimo >= 0),
+  juros_atraso  numeric(5,2) not null default 0 check (juros_atraso between 0 and 100),
+  quitada_em    date,
   criado_em     timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
   excluido_em   timestamptz
@@ -244,6 +249,7 @@ create index if not exists idx_clientes_user          on public.clientes (user_i
 create index if not exists idx_servicos_user          on public.servicos (user_id, cliente_id);
 create index if not exists idx_pagamentos_user        on public.pagamentos (user_id, cliente_id);
 create index if not exists idx_parcelas_user         on public.parcelas (user_id, cliente_id, vencimento);
+create index if not exists idx_pagamentos_parcela     on public.pagamentos (user_id, parcela_id);
 
 -- ------------------------------------------------------------
 -- Row Level Security

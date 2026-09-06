@@ -527,6 +527,21 @@
   .dialogo .btn-discreto { color: var(--suave); font-weight: 600; padding: 12px; }
   .dialogo .btn-discreto:active { background: var(--cartao-2); }
 
+  .telefone-linha {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .telefone-linha > .entrada { flex: 1 1 auto; min-width: 0; }
+  .telefone-linha .linha-acao {
+    border: 1px solid var(--borda);
+    background: rgba(14,12,10,.62);
+  }
+  .telefone-linha .linha-acao.tem-whats { color: #25D366; border-color: rgba(37,211,102,.45); }
+  .telefone-marca { font-size: 12px; color: var(--suave); margin: -4px 0 14px; }
+  .telefone-marca .n { color: #25D366; font-weight: 700; }
+
   .pilula-periodo {
     display: inline-flex;
     align-items: center;
@@ -1315,13 +1330,24 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.4.1';
+  var VERSAO = '3.5.0';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.5.0',
+      data: '2026-09-06',
+      itens: [
+        'No parcelamento dá para escrever direto quanto vai ser cobrado no total; o app divide pelas parcelas e mostra o acréscimo ou o desconto.',
+        'Parcela com pagamento mínimo e juros por atraso, os dois opcionais.',
+        'Na hora de receber: atalho para pagar o mínimo, o valor já com os juros, e pagamento em partes deixando o resto em aberto.',
+        'Cliente pode ter vários números, cada um com a sua marcação de WhatsApp.',
+        'Botão para verificar quais números têm WhatsApp: celular entra marcado, fixo sai desmarcado, e dá para abrir a conversa e confirmar.'
+      ]
+    },
     {
       versao: '3.4.1',
       data: '2026-09-06',
@@ -1634,6 +1660,28 @@
 
   function novoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
+  function telefonesLimpos(c) {
+    var bruta = Array.isArray(c.telefones) ? c.telefones : [];
+    var limpos = [];
+    var vistos = {};
+    bruta.forEach(function (t) {
+      var numero = soDigitos(t && t.numero).slice(0, 15);
+      if (!numero || vistos[numero]) return;
+      vistos[numero] = true;
+      limpos.push({
+        numero: numero,
+        whats: t.whats !== false,
+        rotulo: texto(t.rotulo).slice(0, 20)
+      });
+    });
+    // Cadastro antigo, com um número só no campo de sempre.
+    var unico = soDigitos(c.telefone);
+    if (unico && !vistos[unico]) {
+      limpos.unshift({ numero: unico, whats: c.whatsapp !== false, rotulo: '' });
+    }
+    return limpos.slice(0, 6);
+  }
+
   // ---------- Telefone ----------
   //
   // Guardamos só os números. Os parênteses, o espaço e o traço são enfeite
@@ -1659,16 +1707,53 @@
     return d.length >= 12 && d.length <= 13 ? d : '';
   }
 
-  function temWhatsapp(cliente) {
-    return cliente.whatsapp !== false && !!numeroWhatsapp(cliente.telefone);
+  // Celular no Brasil tem 11 dígitos e o nono na frente do número.
+  // Fixo não tem WhatsApp comum, então já entra desmarcado.
+  function pareceCelular(v) {
+    var d = soDigitos(v);
+    if (d.length === 11) return d.charAt(2) === '9';
+    if (d.length === 13 && d.indexOf('55') === 0) return d.charAt(4) === '9';
+    return false;
   }
 
-  function abrirWhatsapp(cliente, mensagem) {
-    var numero = numeroWhatsapp(cliente.telefone);
-    if (!numero) { avisar('Este cliente não tem um celular válido.'); return; }
-    // O texto vai pronto na caixa de conversa. Quem envia é a pessoa.
-    var url = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(mensagem);
-    window.open(url, '_blank', 'noopener');
+  // Um cliente pode ter vários números. Os cadastros antigos tinham um só.
+  function telefonesDoCliente(cliente) {
+    if (Array.isArray(cliente.telefones) && cliente.telefones.length) return cliente.telefones;
+    if (cliente.telefone) return [{ numero: cliente.telefone, whats: cliente.whatsapp !== false }];
+    return [];
+  }
+
+  function whatsappDoCliente(cliente) {
+    var achados = telefonesDoCliente(cliente).filter(function (t) {
+      return t.whats !== false && numeroWhatsapp(t.numero);
+    });
+    return achados.length ? achados : [];
+  }
+
+  function temWhatsapp(cliente) { return whatsappDoCliente(cliente).length > 0; }
+
+  function abrirWhatsapp(cliente, mensagem, numeroEscolhido) {
+    var lista = whatsappDoCliente(cliente);
+    if (!lista.length) { avisar('Este cliente não tem um número com WhatsApp.'); return; }
+
+    function enviar(numero) {
+      // O texto vai pronto na caixa de conversa. Quem envia é a pessoa.
+      var url = 'https://wa.me/' + numeroWhatsapp(numero) + '?text=' + encodeURIComponent(mensagem);
+      window.open(url, '_blank', 'noopener');
+    }
+
+    if (numeroEscolhido) { enviar(numeroEscolhido); return; }
+    if (lista.length === 1) { enviar(lista[0].numero); return; }
+
+    abrirEscolha({
+      titulo: 'Para qual número?',
+      valor: lista[0].numero,
+      opcoes: lista.map(function (t) {
+        return { valor: t.numero, rotulo: telefoneBonito(t.numero), detalhe: t.rotulo || '' };
+      })
+    }, function (escolhido) {
+      if (escolhido) enviar(escolhido);
+    });
   }
 
   // O Postgres devolve bigint como texto em algumas configurações, então
@@ -1745,6 +1830,7 @@
           obs: texto(c.obs).slice(0, 200),
           proximoPagamento: soData(c.proximoPagamento),
           whatsapp: c.whatsapp !== false,
+          telefones: telefonesLimpos(c),
           criadoEm: inteiro(c.criadoEm) || Date.now()
         };
       });
@@ -1781,6 +1867,9 @@
           total: Math.max(inteiro(p.total), 1),
           valor: inteiro(p.valor),
           vencimento: soData(p.vencimento),
+          minimo: Math.max(inteiro(p.minimo), 0),
+          jurosAtraso: Math.min(Math.max(Number(p.jurosAtraso) || 0, 0), 100),
+          quitadaEm: soData(p.quitadaEm),
           pagamentoId: texto(p.pagamentoId),
           criadoEm: inteiro(p.criadoEm) || Date.now()
         };
@@ -1804,6 +1893,7 @@
           servicoId: texto(p.servicoId),
           valor: inteiro(p.valor),
           data: soData(p.data),
+          parcelaId: texto(p.parcelaId),
           lancamentoId: texto(p.lancamentoId),
           criadoEm: inteiro(p.criadoEm) || Date.now()
         };
@@ -2453,6 +2543,7 @@
         return {
           id: c.id, user_id: uid, nome: c.nome, telefone: c.telefone, obs: c.obs,
           whatsapp: c.whatsapp !== false,
+          telefones: telefonesDoCliente(c),
           proximo_pagamento: ouNulo(c.proximoPagamento)
         };
       }),
@@ -2467,12 +2558,15 @@
         return {
           id: p.id, user_id: uid, cliente_id: p.clienteId, servico_id: ouNulo(p.servicoId),
           pagamento_id: ouNulo(p.pagamentoId), numero: p.numero, total: p.total,
-          valor: p.valor, vencimento: p.vencimento
+          valor: p.valor, vencimento: p.vencimento,
+          minimo: p.minimo || 0, juros_atraso: p.jurosAtraso || 0,
+          quitada_em: ouNulo(p.quitadaEm)
         };
       }),
       pagamentos: estado.pagamentos.map(function (p) {
         return {
           id: p.id, user_id: uid, cliente_id: p.clienteId, servico_id: ouNulo(p.servicoId),
+          parcela_id: ouNulo(p.parcelaId),
           lancamento_id: ouNulo(p.lancamentoId), valor: p.valor, data: p.data
         };
       }),
@@ -2654,6 +2748,7 @@
       return {
         id: c.id, nome: c.nome, telefone: c.telefone || '', obs: c.obs || '',
         whatsapp: c.whatsapp !== false,
+        telefones: Array.isArray(c.telefones) ? c.telefones : [],
         proximoPagamento: c.proximo_pagamento || '',
         criadoEm: Date.parse(c.criado_em) || Date.now()
       };
@@ -2672,6 +2767,8 @@
         id: p.id, clienteId: p.cliente_id, servicoId: p.servico_id || '',
         pagamentoId: p.pagamento_id || '', numero: p.numero, total: p.total,
         valor: p.valor, vencimento: soData(p.vencimento),
+        minimo: p.minimo || 0, jurosAtraso: Number(p.juros_atraso) || 0,
+        quitadaEm: soData(p.quitada_em),
         criadoEm: Date.parse(p.criado_em) || Date.now()
       };
     });
@@ -2679,6 +2776,7 @@
     novo.pagamentos = (r.pagamentos || []).map(function (p) {
       return {
         id: p.id, clienteId: p.cliente_id, servicoId: p.servico_id || '',
+        parcelaId: p.parcela_id || '',
         lancamentoId: p.lancamento_id || '', valor: p.valor, data: p.data,
         criadoEm: Date.parse(p.criado_em) || Date.now()
       };
@@ -4364,8 +4462,67 @@
       });
   }
 
+  // Quanto já entrou nesta parcela.
+  function pagoNaParcela(p) {
+    var soma = 0;
+    estado.pagamentos.forEach(function (g) { if (g.parcelaId === p.id) soma += g.valor; });
+    // Compatibilidade: as parcelas antigas apontavam para um pagamento só.
+    if (!soma && p.pagamentoId) {
+      var antigo = achar(estado.pagamentos, p.pagamentoId);
+      if (antigo) soma = antigo.valor;
+    }
+    return soma;
+  }
+
+  // Juros simples de atraso, contados por dia a partir da taxa mensal.
+  // Param de correr assim que a parcela é quitada.
+  function jurosDaParcela(p) {
+    if (parcelaPaga(p)) return 0;
+    var taxa = Number(p.jurosAtraso) || 0;
+    if (taxa <= 0) return 0;
+    var hoje = hojeTexto();
+    if (p.vencimento >= hoje) return 0;
+    var dias = Math.round((comoData(hoje) - comoData(p.vencimento)) / 86400000);
+    return Math.round(p.valor * (taxa / 100) * (dias / 30));
+  }
+
+  // O que falta pagar nesta parcela, já com os juros de atraso.
+  function faltaNaParcela(p) {
+    if (parcelaPaga(p)) return 0;
+    return Math.max(p.valor + jurosDaParcela(p) - pagoNaParcela(p), 0);
+  }
+
   function parcelaPaga(p) {
-    return !!(p.pagamentoId && achar(estado.pagamentos, p.pagamentoId));
+    if (p.quitadaEm) return true;
+    if (p.pagamentoId && achar(estado.pagamentos, p.pagamentoId)) return true;
+    var soma = 0;
+    estado.pagamentos.forEach(function (g) { if (g.parcelaId === p.id) soma += g.valor; });
+    return soma > 0 && soma >= p.valor - 1;
+  }
+
+  function parcelaParcial(p) {
+    return !parcelaPaga(p) && pagoNaParcela(p) > 0;
+  }
+
+  // O último pagamento lançado nesta parcela, para abrir a ficha dele.
+  function pagamentoDaParcela(p) {
+    var achado = '';
+    estado.pagamentos.forEach(function (g) { if (g.parcelaId === p.id) achado = g.id; });
+    return achado;
+  }
+
+  // Quanto dá para pagar de menos nesta parcela.
+  function minimoDaParcela(p) {
+    var falta = faltaNaParcela(p);
+    if (!p.minimo || p.minimo <= 0) return 0;
+    return Math.min(p.minimo, falta);
+  }
+
+  // Depois de receber, marca a parcela como quitada se o total foi coberto.
+  function conferirQuitacao(parcela, dataPagamento) {
+    if (!parcela || parcela.quitadaEm) return;
+    var devido = parcela.valor + jurosDaParcela(parcela);
+    if (pagoNaParcela(parcela) >= devido - 1) parcela.quitadaEm = dataPagamento || hojeTexto();
   }
 
   // O que já venceu e ainda não foi pago.
@@ -4374,8 +4531,12 @@
     var vencidas = parcelasDoCliente(id).filter(function (p) {
       return !parcelaPaga(p) && p.vencimento < hoje;
     });
-    var total = vencidas.reduce(function (soma, p) { return soma + p.valor; }, 0);
-    return { vencidas: vencidas, total: total, desde: vencidas.length ? vencidas[0].vencimento : '' };
+    var total = vencidas.reduce(function (soma, p) { return soma + faltaNaParcela(p); }, 0);
+    var juros = vencidas.reduce(function (soma, p) { return soma + jurosDaParcela(p); }, 0);
+    return {
+      vencidas: vencidas, total: total, juros: juros,
+      desde: vencidas.length ? vencidas[0].vencimento : ''
+    };
   }
 
   // A próxima parcela em aberto. Sem parcelas, cai na data solta do cadastro.
@@ -4447,11 +4608,17 @@
       linhas.push('');
       linhas.push('Passando para lembrar do pagamento que ficou em aberto:');
       atraso.vencidas.forEach(function (p) {
-        linhas.push('• ' + emReais(p.valor) + ' — venceu em ' + dataBr(p.vencimento) +
-          (p.total > 1 ? ' (parcela ' + p.numero + '/' + p.total + ')' : ''));
+        var juros = jurosDaParcela(p);
+        linhas.push('• ' + emReais(faltaNaParcela(p)) + ' — venceu em ' + dataBr(p.vencimento) +
+          (p.total > 1 ? ' (parcela ' + p.numero + '/' + p.total + ')' : '') +
+          (juros > 0 ? ', já com ' + emReais(juros) + ' de juros' : ''));
       });
       linhas.push('');
       linhas.push('Total em aberto: ' + emReais(atraso.total) + '.');
+      if (atraso.vencidas.some(function (p) { return minimoDaParcela(p) > 0; })) {
+        var minimos = atraso.vencidas.reduce(function (soma, p) { return soma + minimoDaParcela(p); }, 0);
+        linhas.push('Dá para começar com ' + emReais(minimos) + ' e acertar o resto depois.');
+      }
     } else {
       var r = resumoCliente(cliente.id);
       var proxima = proximoVencimento(cliente.id);
@@ -4677,9 +4844,11 @@
         var texto = no('div', 'linha-texto');
         texto.appendChild(no('div', 'linha-titulo', c.nome));
         var sub = no('div', 'linha-sub');
+        var fones = telefonesDoCliente(c);
         sub.appendChild(document.createTextNode(
           servicosDoCliente(c.id).length + ' registro(s)' +
-          (c.telefone ? ' · ' + telefoneBonito(c.telefone) : '')));
+          (fones.length ? ' · ' + telefoneBonito(fones[0].numero) : '') +
+          (fones.length > 1 ? ' +' + (fones.length - 1) : '')));
         texto.appendChild(sub);
 
         var fim = no('div', 'linha-fim');
@@ -4791,20 +4960,127 @@
       var campoNome = entradaTexto(existente ? existente.nome : '', 'Nome do cliente', 60);
       forma.appendChild(campo('Nome', campoNome));
 
-      var campoTelefone = entradaTelefone(existente ? existente.telefone : '');
-      forma.appendChild(campo('Celular', campoTelefone));
+      // Uma linha por número. Cada uma tem o seu botão de WhatsApp.
+      var numeros = existente ? telefonesDoCliente(existente).map(function (t) {
+        return { numero: t.numero, whats: t.whats !== false };
+      }) : [];
+      if (!numeros.length) numeros = [{ numero: '', whats: true }];
 
-      var temWhats = existente ? existente.whatsapp !== false : true;
-      var marcaWhats = botao('lembrar', null, function () {
-        temWhats = !temWhats;
-        marcaWhats.setAttribute('aria-pressed', temWhats ? 'true' : 'false');
-        marcaWhats.querySelector('.caixinha').textContent = temWhats ? '✓' : '';
-      });
-      marcaWhats.setAttribute('aria-pressed', temWhats ? 'true' : 'false');
-      marcaWhats.style.margin = '-4px 0 16px';
-      marcaWhats.appendChild(no('span', 'caixinha', temWhats ? '✓' : ''));
-      marcaWhats.appendChild(no('span', null, 'Este número tem WhatsApp'));
-      forma.appendChild(marcaWhats);
+      var caixaNumeros = no('div');
+      forma.appendChild(campo('Celulares', caixaNumeros));
+
+      var resumoNumeros = no('div', 'telefone-marca');
+      forma.appendChild(resumoNumeros);
+
+      function pintarNumeros() {
+        caixaNumeros.textContent = '';
+        numeros.forEach(function (item, i) {
+          var linha = no('div', 'telefone-linha');
+
+          var entrada = entradaTelefone(item.numero);
+          var alterna = botao('linha-acao', null, function () {
+            item.whats = !item.whats;
+            item.tocado = true;
+            pintarAlterna();
+            contarNumeros();
+          });
+          alterna.appendChild(iconeWhatsapp());
+
+          // Só a cor do ícone muda; refazer a lista a cada tecla tiraria o
+          // teclado do ar no meio da digitação.
+          function pintarAlterna() {
+            alterna.className = 'linha-acao' + (item.whats ? ' tem-whats' : '');
+            alterna.setAttribute('aria-label', (item.whats ? 'Tem' : 'Não tem') + ' WhatsApp');
+          }
+          pintarAlterna();
+
+          entrada.addEventListener('input', function () {
+            item.numero = soDigitos(entrada.value);
+            // Fixo não costuma ter WhatsApp; celular sim. Depois que você
+            // mexe no ícone verde, a sua escolha manda.
+            if (!item.tocado) { item.whats = pareceCelular(item.numero); pintarAlterna(); }
+            contarNumeros();
+          });
+
+          linha.appendChild(entrada);
+          linha.appendChild(alterna);
+
+          if (numeros.length > 1) {
+            var tirar = botao('linha-acao', null, function () {
+              numeros.splice(i, 1);
+              pintarNumeros();
+            });
+            tirar.setAttribute('aria-label', 'Remover este número');
+            tirar.appendChild(icone('lixo'));
+            linha.appendChild(tirar);
+          }
+
+          caixaNumeros.appendChild(linha);
+        });
+
+        if (numeros.length < 6) {
+          var somar = botao('btn btn-fantasma', '+ Outro número', function () {
+            numeros.push({ numero: '', whats: true });
+            pintarNumeros();
+          });
+          somar.style.padding = '11px';
+          somar.style.fontSize = '14px';
+          caixaNumeros.appendChild(somar);
+        }
+
+        var verificar = botao('btn btn-fantasma', 'Verificar quais têm WhatsApp', function () {
+          verificarNumeros();
+        });
+        verificar.style.padding = '11px';
+        verificar.style.fontSize = '14px';
+        verificar.style.marginTop = '8px';
+        caixaNumeros.appendChild(verificar);
+
+        contarNumeros();
+      }
+
+      function contarNumeros() {
+        var validos = numeros.filter(function (t) { return numeroWhatsapp(t.numero); });
+        var comWhats = validos.filter(function (t) { return t.whats; });
+        resumoNumeros.textContent = '';
+        if (!validos.length) {
+          resumoNumeros.appendChild(document.createTextNode('Marque o ícone verde nos números que atendem no WhatsApp.'));
+          return;
+        }
+        resumoNumeros.appendChild(no('span', 'n', comWhats.length + ' de ' + validos.length));
+        resumoNumeros.appendChild(document.createTextNode(
+          ' número(s) marcado(s) com WhatsApp. O ícone verde liga e desliga cada um.'));
+      }
+
+      // Nenhum site consegue perguntar ao WhatsApp quem tem conta: isso não
+      // é aberto. Então marcamos pelo formato (celular sim, fixo não) e
+      // deixamos você abrir a conversa para confirmar de verdade.
+      function verificarNumeros() {
+        var validos = numeros.filter(function (t) { return numeroWhatsapp(t.numero); });
+        if (!validos.length) {
+          avisarCaixa('Nenhum número completo', 'Escreva ao menos um número com DDD para poder verificar.');
+          return;
+        }
+        var mudou = 0;
+        validos.forEach(function (t) {
+          var esperado = pareceCelular(t.numero);
+          t.tocado = false;
+          if (t.whats !== esperado) { t.whats = esperado; mudou += 1; }
+        });
+        pintarNumeros();
+        perguntar({
+          titulo: mudou ? mudou + ' número(s) remarcado(s)' : 'Nada mudou',
+          texto: 'Marcamos como WhatsApp os números de celular (11 dígitos com o 9 na frente) e ' +
+            'desmarcamos os fixos. O WhatsApp não deixa nenhum site consultar quem tem conta, ' +
+            'então a confirmação de verdade é abrindo a conversa.',
+          ok: 'Abrir a conversa para testar', cancelar: 'Deixar assim', icone: 'alerta'
+        }, function () {
+          var alvo = validos.filter(function (t) { return t.whats; })[0] || validos[0];
+          window.open('https://wa.me/' + numeroWhatsapp(alvo.numero), '_blank', 'noopener');
+        });
+      }
+
+      pintarNumeros();
 
       var campoObs = entradaTexto(existente ? existente.obs : '', 'Anotação (opcional)', 200);
       forma.appendChild(campo('Observação', campoObs));
@@ -4814,15 +5090,22 @@
         var nome = campoNome.value.trim();
         if (!nome) { mostrarErro(forma, 'Escreva o nome do cliente.'); return; }
 
+        var lista = numeros.filter(function (t) { return soDigitos(t.numero); })
+          .map(function (t) { return { numero: soDigitos(t.numero), whats: !!t.whats, rotulo: '' }; });
+        var principal = lista.length ? lista[0] : { numero: '', whats: true };
+
         if (existente) {
           existente.nome = nome;
-          existente.telefone = soDigitos(campoTelefone.value);
-          existente.whatsapp = temWhats;
+          existente.telefones = lista;
+          existente.telefone = principal.numero;
+          existente.whatsapp = principal.whats;
           existente.obs = campoObs.value.trim();
         } else {
           estado.clientes.push({
-            id: novoId(), nome: nome, telefone: soDigitos(campoTelefone.value),
-            whatsapp: temWhats,
+            id: novoId(), nome: nome,
+            telefones: lista,
+            telefone: principal.numero,
+            whatsapp: principal.whats,
             obs: campoObs.value.trim(),
             proximoPagamento: '',
             criadoEm: Date.now()
@@ -4880,8 +5163,11 @@
     var atraso = atrasoDoCliente(id);
 
     abrirFolha(cliente.nome, function (folha) {
-      if (cliente.telefone) {
-        var tel = no('p', 'linha-sub', telefoneBonito(cliente.telefone));
+      var fones = telefonesDoCliente(cliente);
+      if (fones.length) {
+        var tel = no('p', 'linha-sub', fones.map(function (t) {
+          return telefoneBonito(t.numero) + (t.whats ? '' : ' (sem WhatsApp)');
+        }).join('  ·  '));
         tel.style.textAlign = 'center';
         tel.style.marginTop = '-10px';
         folha.appendChild(tel);
@@ -4959,19 +5245,26 @@
             var paga = parcelaPaga(p);
             var vencida = !paga && p.vencimento < hojeP;
             var servicoP = p.servicoId ? achar(estado.servicos, p.servicoId) : null;
+            var parcial = parcelaParcial(p);
+            var jurosP = jurosDaParcela(p);
+            var sub = (paga ? 'Paga' : vencida ? 'Venceu' : 'Vence') + ' em ' + dataBr(p.vencimento);
+            if (parcial) sub = 'Faltam ' + emReais(faltaNaParcela(p)) + ' · ' + sub.toLowerCase();
+            if (jurosP > 0) sub += ' · ' + emReais(jurosP) + ' de juros';
+            if (servicoP) sub += ' · ' + servicoP.nome;
+
             var linha = botao('linha' + (vencida ? ' atrasada' : ''), null, function () {
-              if (paga) { abrirFolhaPagamento(id, p.pagamentoId); return; }
+              if (paga) { abrirFolhaPagamento(id, p.pagamentoId || pagamentoDaParcela(p)); return; }
               abrirFolhaParcela(id, p.id);
             });
             juntar(linha,
-              selo(paga ? '#3DDC84' : vencida ? '#FF6B6B' : '#E9B44C', paga ? '✓' : String(p.numero)),
+              selo(paga ? '#3DDC84' : vencida ? '#FF6B6B' : parcial ? '#38BDF8' : '#E9B44C',
+                paga ? '✓' : String(p.numero)),
               juntar(no('div', 'linha-texto'),
                 no('div', 'linha-titulo', 'Parcela ' + p.numero + ' de ' + p.total),
-                no('div', 'linha-sub',
-                  (paga ? 'Paga' : vencida ? 'Venceu' : 'Vence') + ' em ' + dataBr(p.vencimento) +
-                  (servicoP ? ' · ' + servicoP.nome : ''))),
+                no('div', 'linha-sub', sub)),
               juntar(no('div', 'linha-fim'),
-                no('div', 'linha-valor num' + (paga ? ' verde' : vencida ? ' vermelho' : ''), emReais(p.valor)))
+                no('div', 'linha-valor num' + (paga ? ' verde' : vencida ? ' vermelho' : ''),
+                  emReais(paga ? p.valor : p.valor + jurosP)))
             );
             lista.appendChild(linha);
           });
@@ -5008,7 +5301,7 @@
             perguntar({
               titulo: 'Apagar as parcelas em aberto?',
               texto: 'Saem as ' + emAberto.length + ' parcelas que ainda não foram pagas, somando ' +
-                emReais(emAberto.reduce(function (soma, p) { return soma + p.valor; }, 0)) +
+                emReais(emAberto.reduce(function (soma, p) { return soma + faltaNaParcela(p); }, 0)) +
                 '. As já pagas continuam. Os registros e os pagamentos não são tocados.',
               ok: 'Apagar parcelas', tom: 'perigo'
             }, function () {
@@ -5236,11 +5529,27 @@
   // Divide o valor, aplica o acréscimo escolhido e mostra o resumo do que
   // vai ser cobrado. Só grava quando você confirma.
 
-  function calcularParcelas(base, vezes, modo, acrescimo, primeira) {
+  // totalAlvo > 0 manda: o total é o que você escreveu, e as parcelas saem
+  // da divisão dele. Sem ele, o total vem do valor mais o acréscimo.
+  function calcularParcelas(base, vezes, modo, acrescimo, primeira, totalAlvo) {
     vezes = Math.max(1, Math.min(inteiro(vezes) || 1, 60));
+    var itens = [];
+
+    if (totalAlvo > 0) {
+      var fatiaT = Math.floor(totalAlvo / vezes);
+      var sobraT = totalAlvo - fatiaT * vezes;
+      for (var j = 0; j < vezes; j++) {
+        itens.push({
+          numero: j + 1, total: vezes,
+          valor: fatiaT + (j === 0 ? sobraT : 0),
+          vencimento: somaMeses(primeira, j)
+        });
+      }
+      return { itens: itens, total: totalAlvo, acrescimoTotal: totalAlvo - base, manual: true };
+    }
+
     var fatia = Math.floor(base / vezes);
     var sobra = base - fatia * vezes;
-    var itens = [];
     for (var i = 0; i < vezes; i++) {
       var semAcrescimo = fatia + (i === 0 ? sobra : 0);
       var valor = semAcrescimo;
@@ -5255,7 +5564,7 @@
       });
     }
     var total = itens.reduce(function (soma, p) { return soma + p.valor; }, 0);
-    return { itens: itens, total: total, acrescimoTotal: total - base };
+    return { itens: itens, total: total, acrescimoTotal: total - base, manual: false };
   }
 
   function abrirFolhaParcelamento(clienteId, servicoId) {
@@ -5313,6 +5622,22 @@
       caixaReais.style.display = 'none';
       forma.appendChild(caixaReais);
 
+      // Se você escrever o total, ele manda: as parcelas saem da divisão dele.
+      var totalManual = 0;
+      var campoTotal = entradaValor(sugestao, false);
+      campoTotal.style.color = 'var(--ouro)';
+      forma.appendChild(campo('Total a cobrar', campoTotal));
+      var notaTotal = no('div', 'linha-nota',
+        'Mexeu aqui, o app divide esse total pelas parcelas. Mexeu no valor ou no acréscimo, ele volta a calcular sozinho.');
+      notaTotal.style.margin = '-8px 0 16px';
+      forma.appendChild(notaTotal);
+
+      var campoMinimo = entradaValor(0, false);
+      forma.appendChild(campo('Pagamento mínimo por parcela (opcional)', campoMinimo));
+
+      var campoJuros = entradaTextoNumero('', '0');
+      forma.appendChild(campo('Juros por atraso, ao mês (opcional %)', campoJuros));
+
       var resumo = cartao();
       forma.appendChild(resumo);
 
@@ -5329,7 +5654,8 @@
         return calcularParcelas(
           digitosParaCentavos(campoValorEl.value),
           vezes, modo, lerAcrescimo(),
-          ehData(campoData.value) ? campoData.value : hojeTexto()
+          ehData(campoData.value) ? campoData.value : hojeTexto(),
+          totalManual
         );
       }
 
@@ -5341,6 +5667,8 @@
           return;
         }
         var c = contas();
+        if (!totalManual) campoTotal.value = emReais(c.total);
+
         resumo.appendChild(no('div', 'rotulo', 'Vai ser cobrado'));
         resumo.appendChild(no('div', 'valorao pequeno num', emReais(c.total)));
         var detalhe = vezes + 'x de ' + emReais(c.itens[0].valor);
@@ -5352,6 +5680,20 @@
         if (c.acrescimoTotal > 0) {
           resumo.appendChild(no('div', 'linha-nota ouro',
             'Acréscimo de ' + emReais(c.acrescimoTotal) + ' sobre os ' + emReais(base) + ' combinados.'));
+        } else if (c.acrescimoTotal < 0) {
+          resumo.appendChild(no('div', 'linha-nota verde',
+            'Desconto de ' + emReais(-c.acrescimoTotal) + ' sobre os ' + emReais(base) + ' combinados.'));
+        }
+
+        var minimo = digitosParaCentavos(campoMinimo.value);
+        if (minimo > 0) {
+          resumo.appendChild(no('div', 'linha-nota',
+            'Mínimo aceito por parcela: ' + emReais(minimo) + '.'));
+        }
+        var juros = comoNumero(campoJuros.value, 0);
+        if (juros > 0) {
+          resumo.appendChild(no('div', 'linha-nota',
+            'Atrasando, entram ' + numeroBr(juros) + '% ao mês sobre a parcela, contados por dia.'));
         }
 
         var lista = no('div');
@@ -5366,16 +5708,24 @@
         resumo.appendChild(lista);
       }
 
-      campoValorEl.addEventListener('input', pintarResumo);
+      // Mexer no valor, nas vezes ou no acréscimo devolve o total ao cálculo.
+      function recalcular() { totalManual = 0; pintarResumo(); }
+      campoValorEl.addEventListener('input', recalcular);
       campoData.addEventListener('change', pintarResumo);
-      campoPorcento.addEventListener('input', pintarResumo);
-      campoReais.addEventListener('input', pintarResumo);
-      campoVezes.aoMudar = function (v) { vezes = parseInt(v, 10) || 1; pintarResumo(); };
+      campoPorcento.addEventListener('input', recalcular);
+      campoReais.addEventListener('input', recalcular);
+      campoMinimo.addEventListener('input', pintarResumo);
+      campoJuros.addEventListener('input', pintarResumo);
+      campoTotal.addEventListener('input', function () {
+        totalManual = digitosParaCentavos(campoTotal.value);
+        pintarResumo();
+      });
+      campoVezes.aoMudar = function (v) { vezes = parseInt(v, 10) || 1; recalcular(); };
       campoModo.aoMudar = function (v) {
         modo = v;
         caixaPorcento.style.display = v === 'porcento' ? '' : 'none';
         caixaReais.style.display = v === 'reais' ? '' : 'none';
-        pintarResumo();
+        recalcular();
       };
       pintarResumo();
 
@@ -5394,6 +5744,8 @@
             ', última em ' + dataBr(c.itens[c.itens.length - 1].vencimento) + '.',
           ok: 'Confirmar', icone: 'alvo'
         }, function () {
+          var minimoSalvo = digitosParaCentavos(campoMinimo.value);
+          var jurosSalvo = Math.min(Math.max(comoNumero(campoJuros.value, 0), 0), 100);
           c.itens.forEach(function (p) {
             estado.parcelas.push({
               id: novoId(),
@@ -5403,6 +5755,9 @@
               total: p.total,
               valor: p.valor,
               vencimento: p.vencimento,
+              minimo: Math.min(minimoSalvo, p.valor),
+              jurosAtraso: jurosSalvo,
+              quitadaEm: '',
               pagamentoId: '',
               criadoEm: Date.now()
             });
@@ -5445,6 +5800,12 @@
       var campoData = entradaData(parcela.vencimento);
       forma.appendChild(campo('Vence em', campoData));
 
+      var campoMinimo = entradaValor(parcela.minimo || 0, false);
+      forma.appendChild(campo('Pagamento mínimo (opcional)', campoMinimo));
+
+      var campoJuros = entradaTextoNumero(parcela.jurosAtraso || '', '0');
+      forma.appendChild(campo('Juros por atraso, ao mês (opcional %)', campoJuros));
+
       var opcoesServico = [{ valor: '', rotulo: 'Sem registro específico' }].concat(
         servicos.map(function (sv) {
           return { valor: sv.id, rotulo: sv.nome, detalhe: (sv.tipo || 'Serviço') + ' · ' + emReais(sv.valor) };
@@ -5452,9 +5813,16 @@
       var campoServico = entradaSelecao(opcoesServico, parcela.servicoId || '', 'Referente a');
       forma.appendChild(campo('Referente a', campoServico));
 
+      var jaPago = pagoNaParcela(parcela);
+      var juros = jurosDaParcela(parcela);
       if (parcela.vencimento < hojeTexto()) {
         forma.appendChild(no('div', 'linha-nota vermelho',
-          'Esta parcela venceu em ' + dataBr(parcela.vencimento) + '.'));
+          'Esta parcela venceu em ' + dataBr(parcela.vencimento) + '.' +
+          (juros > 0 ? ' Os juros já somam ' + emReais(juros) + '.' : '')));
+      }
+      if (jaPago > 0) {
+        forma.appendChild(no('div', 'linha-nota verde',
+          'Já entraram ' + emReais(jaPago) + '. Faltam ' + emReais(faltaNaParcela(parcela)) + '.'));
       }
       if (servico) {
         forma.appendChild(no('div', 'linha-nota',
@@ -5473,6 +5841,8 @@
         parcela.valor = valor;
         parcela.vencimento = campoData.value;
         parcela.servicoId = campoServico.value;
+        parcela.minimo = Math.min(digitosParaCentavos(campoMinimo.value), valor);
+        parcela.jurosAtraso = Math.min(Math.max(comoNumero(campoJuros.value, 0), 0), 100);
         salvar();
         voltarNavegacao();
         avisar('Parcela atualizada.');
@@ -5506,16 +5876,59 @@
     abrirFolha(existente ? 'Editar pagamento' : 'Registrar pagamento', function (folha) {
       var forma = no('div');
 
-      var campoValorEl = entradaValor(existente ? existente.valor : (parcela ? parcela.valor : 0), true);
+      var faltaParcela = parcela ? faltaNaParcela(parcela) : 0;
+      var minimoParcela = parcela ? minimoDaParcela(parcela) : 0;
+      var jurosParcela = parcela ? jurosDaParcela(parcela) : 0;
+
+      var campoValorEl = entradaValor(existente ? existente.valor : faltaParcela, true);
       campoValorEl.style.color = 'var(--verde)';
       forma.appendChild(campo('Valor recebido', campoValorEl));
 
       if (parcela) {
         var notaParcela = no('div', 'linha-nota',
           'Parcela ' + parcela.numero + ' de ' + parcela.total + ', com vencimento em ' +
-          dataBr(parcela.vencimento) + '.');
+          dataBr(parcela.vencimento) + '.' +
+          (jurosParcela > 0 ? ' Com ' + emReais(jurosParcela) + ' de juros de atraso.' : ''));
         notaParcela.style.margin = '-8px 0 14px';
         forma.appendChild(notaParcela);
+
+        var atalhosParcela = no('div', 'chips');
+        atalhosParcela.appendChild(botao('chip', 'Tudo: ' + emReais(faltaParcela), function () {
+          campoValorEl.value = emReais(faltaParcela);
+          pintarSobra();
+        }));
+        if (minimoParcela > 0 && minimoParcela < faltaParcela) {
+          atalhosParcela.appendChild(botao('chip', 'Mínimo: ' + emReais(minimoParcela), function () {
+            campoValorEl.value = emReais(minimoParcela);
+            pintarSobra();
+          }));
+        }
+        atalhosParcela.appendChild(botao('chip', 'Metade', function () {
+          campoValorEl.value = emReais(Math.round(faltaParcela / 2));
+          pintarSobra();
+        }));
+        forma.appendChild(campo('Faltam ' + emReais(faltaParcela), atalhosParcela));
+
+        var notaSobra = no('div', 'linha-nota');
+        notaSobra.style.margin = '-8px 0 14px';
+        forma.appendChild(notaSobra);
+
+        var pintarSobra = function () {
+          var v = digitosParaCentavos(campoValorEl.value);
+          if (v <= 0) { notaSobra.textContent = ''; return; }
+          if (v >= faltaParcela) {
+            notaSobra.className = 'linha-nota verde';
+            notaSobra.textContent = 'Quita a parcela.' +
+              (v > faltaParcela ? ' Sobram ' + emReais(v - faltaParcela) + ' de crédito com você.' : '');
+            return;
+          }
+          notaSobra.className = 'linha-nota ouro';
+          notaSobra.textContent = 'Pagamento parcial: ficam ' + emReais(faltaParcela - v) +
+            ' em aberto nesta parcela.' +
+            (minimoParcela > 0 && v < minimoParcela ? ' É menos que o mínimo de ' + emReais(minimoParcela) + '.' : '');
+        };
+        campoValorEl.addEventListener('input', pintarSobra);
+        pintarSobra();
       }
 
       if (!existente && !parcela && r.restante > 0) {
@@ -5598,9 +6011,11 @@
           var idPagamento = novoId();
           estado.pagamentos.push({
             id: idPagamento, clienteId: clienteId, servicoId: campoServico.value,
-            valor: valor, data: campoData.value, lancamentoId: lancamentoId, criadoEm: Date.now()
+            valor: valor, data: campoData.value,
+            parcelaId: parcela ? parcela.id : '',
+            lancamentoId: lancamentoId, criadoEm: Date.now()
           });
-          if (parcela) parcela.pagamentoId = idPagamento;
+          if (parcela) conferirQuitacao(parcela, campoData.value);
         }
 
         salvar();
@@ -5621,7 +6036,10 @@
             }
             marcarExcluido('pagamentos', existente.id);
             estado.pagamentos = estado.pagamentos.filter(function (p) { return p.id !== existente.id; });
-            estado.parcelas.forEach(function (p) { if (p.pagamentoId === existente.id) p.pagamentoId = ''; });
+            estado.parcelas.forEach(function (p) {
+              if (p.pagamentoId === existente.id) p.pagamentoId = '';
+              if (p.id === existente.parcelaId) p.quitadaEm = '';
+            });
             salvar();
             voltarNavegacao();
             avisar('Pagamento excluído.');

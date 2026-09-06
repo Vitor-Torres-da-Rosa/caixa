@@ -463,6 +463,93 @@
   .insight p { margin: 0; font-size: 13.5px; color: var(--suave); line-height: 1.5; }
   .insight .destaque { margin-top: 9px; font-size: 13.5px; font-weight: 700; }
 
+  /* ---------- Caixa de pergunta ---------- */
+
+  .dialogo-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(3,3,4,.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity .18s ease;
+  }
+  .dialogo-fundo[hidden] { display: none; }
+  .dialogo-fundo.aberta { opacity: 1; }
+
+  .dialogo {
+    width: 100%;
+    max-width: 340px;
+    padding: 24px 22px 18px;
+    border-radius: 22px;
+    text-align: center;
+    background: linear-gradient(165deg, rgba(28,23,15,.96) 0%, rgba(8,8,10,.98) 60%);
+    border: 1px solid var(--borda-viva);
+    box-shadow: inset 0 1px 0 rgba(246,221,160,.1), 0 24px 60px rgba(0,0,0,.7);
+    transform: scale(.94);
+    transition: transform .18s cubic-bezier(.32,.72,0,1);
+  }
+  .dialogo-fundo.aberta .dialogo { transform: scale(1); }
+
+  .dialogo-icone {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--ouro);
+    background: radial-gradient(circle at 50% 35%, rgba(233,180,76,.22), rgba(233,180,76,.05) 70%);
+    border: 1px solid rgba(233,180,76,.35);
+  }
+  .dialogo-icone svg { width: 27px; height: 27px; }
+  .dialogo.perigo .dialogo-icone {
+    color: var(--vermelho);
+    background: radial-gradient(circle at 50% 35%, rgba(255,107,107,.20), rgba(255,107,107,.04) 70%);
+    border-color: rgba(255,107,107,.35);
+  }
+
+  .dialogo-titulo { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
+  .dialogo-texto { font-size: 14px; color: var(--suave); line-height: 1.5; margin: 0 0 20px; }
+  .dialogo-acoes { display: flex; flex-direction: column; gap: 9px; }
+  .dialogo-acoes .btn { padding: 14px; border-radius: 13px; }
+  .dialogo .btn-vermelho {
+    background: linear-gradient(140deg, #FF8B8B, #E0453F);
+    color: #1B0806;
+    box-shadow: 0 6px 20px rgba(255,107,107,.2);
+  }
+  .dialogo .btn-discreto { color: var(--suave); font-weight: 600; padding: 12px; }
+  .dialogo .btn-discreto:active { background: var(--cartao-2); }
+
+  /* ---------- Linha com ação ao lado ---------- */
+
+  .linha.linha-dupla { padding: 0 10px 0 0; gap: 0; }
+  .linha-alvo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 13px 8px 13px 16px;
+    text-align: left;
+  }
+  .linha-alvo:active { background: var(--cartao-2); }
+  .linha-acao {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    color: var(--suave);
+  }
+  .linha-acao:active { background: var(--cartao-2); color: var(--ouro); }
+  .linha-acao svg { width: 18px; height: 18px; }
+
   /* ---------- Aviso e toque ---------- */
 
   .aviso {
@@ -1070,6 +1157,15 @@
   <div class="rel-folha" id="relConteudo"></div>
 </div>
 
+<div class="dialogo-fundo" id="dialogoFundo" hidden>
+  <div class="dialogo" role="dialog" aria-modal="true" aria-labelledby="dialogoTitulo">
+    <div class="dialogo-icone" id="dialogoIcone"></div>
+    <h2 class="dialogo-titulo" id="dialogoTitulo"></h2>
+    <p class="dialogo-texto" id="dialogoTexto"></p>
+    <div class="dialogo-acoes" id="dialogoAcoes"></div>
+  </div>
+</div>
+
 <div class="toque" id="toque" role="status" aria-live="polite"></div>
 <input type="file" id="arquivoRestaurar" accept="application/json,.json" class="oculto">
 
@@ -1078,13 +1174,24 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.2.0';
+  var VERSAO = '3.3.0';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.3.0',
+      data: '2026-09-06',
+      itens: [
+        'No Empreendedor, o botão redondo passa a cadastrar cliente.',
+        'Cada categoria agora tem a sua cor fixa: criar uma categoria nova não muda mais a cor das outras.',
+        'As perguntas de confirmar saíram do aviso do navegador e ganharam a cara do app.',
+        'Na lista de contas apareceu um lápis para editar.',
+        'Tocar numa conta abre o extrato dela, com os movimentos dia a dia.'
+      ]
+    },
     {
       versao: '3.2.0',
       data: '2026-09-06',
@@ -1170,6 +1277,35 @@
   var TIPOS_CONTA = ['Conta corrente', 'Poupança', 'Dinheiro físico', 'Corretora', 'Cartão de crédito'];
 
   var CORES = ['#E9B44C', '#60A5FA', '#22D3EE', '#F472B6', '#A78BFA', '#34D399', '#F87171', '#FB923C'];
+
+  // A cor de cada categoria vem do nome, nunca da posição na lista. Assim,
+  // criar uma categoria nova não embaralha a cor das que já estavam lá.
+  var CORES_CATEGORIA = {
+    'Moradia': '#E9B44C', 'Transporte': '#60A5FA', 'Combustível': '#22D3EE',
+    'Alimentação': '#F472B6', 'Mercado': '#A78BFA', 'Casa': '#34D399',
+    'Manutenção': '#F87171', 'Peças': '#FB923C', 'Ferramentas': '#C084FC',
+    'Saúde': '#4ADE80', 'Educação': '#38BDF8', 'Lazer': '#FACC15',
+    'Assinaturas': '#FB7185', 'Impostos': '#94A3B8', 'Investimentos': '#2DD4BF',
+    'Outros': '#9A8F7B',
+    'Salário': '#34D399', 'Serviços': '#E9B44C', 'Uber': '#60A5FA',
+    'Oficina': '#FB923C', 'Freela': '#A78BFA', 'Venda': '#22D3EE',
+    'Rendimentos': '#4ADE80',
+    'Renda Fixa': '#E9B44C', 'Ações': '#60A5FA', 'FIIs': '#22D3EE',
+    'Exterior': '#A78BFA', 'Cripto': '#FB923C'
+  };
+
+  // Para as categorias que você mesmo criar.
+  var CORES_RESERVA = ['#E9B44C', '#60A5FA', '#22D3EE', '#F472B6', '#A78BFA',
+                       '#34D399', '#F87171', '#FB923C', '#C084FC', '#4ADE80',
+                       '#38BDF8', '#FACC15', '#FB7185', '#2DD4BF'];
+
+  function corDeCategoria(nome) {
+    if (CORES_CATEGORIA[nome]) return CORES_CATEGORIA[nome];
+    var texto = String(nome || '');
+    var h = 0;
+    for (var i = 0; i < texto.length; i++) h = (h * 31 + texto.charCodeAt(i)) % 1000003;
+    return CORES_RESERVA[h % CORES_RESERVA.length];
+  }
 
   var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -2586,7 +2722,7 @@
       var fatia = (s.valor / total) * circ;
       var arco = svgNo('circle', {
         cx: centro, cy: centro, r: raio, fill: 'none',
-        stroke: s.cor || CORES[i % CORES.length],
+        stroke: s.cor || corDeCategoria(s.nome),
         'stroke-width': largura,
         'stroke-dasharray': Math.max(fatia - 2, 0.5) + ' ' + (circ - Math.max(fatia - 2, 0.5)),
         'stroke-dashoffset': -acumulado,
@@ -2615,7 +2751,7 @@
     segmentos.forEach(function (s, i) {
       var item = no('div', 'legenda-item');
       var bolinha = no('i', 'bolinha');
-      bolinha.style.background = s.cor || CORES[i % CORES.length];
+      bolinha.style.background = s.cor || corDeCategoria(s.nome);
       juntar(item,
         bolinha,
         no('span', 'nome', s.nome),
@@ -2628,8 +2764,8 @@
   }
 
   function comCores(lista) {
-    return lista.map(function (item, i) {
-      return { nome: item.nome, valor: item.valor, cor: CORES[i % CORES.length] };
+    return lista.map(function (item) {
+      return { nome: item.nome, valor: item.valor, cor: corDeCategoria(item.nome) };
     });
   }
 
@@ -2724,6 +2860,10 @@
     maleta: 'M4 8.5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zM9 8.5v-2a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6.5v2M3 13h18',
     mais: 'M12 5v14M5 12h14',
     lupa: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.2 16.2 21 21',
+    lapis: 'M4.5 19.5h4L19 9a2.12 2.12 0 0 0-3-3L5.5 16.5v3zM14.5 6.5l3 3',
+    alerta: 'M12 8.5v5M12 17h.01M10.3 3.9 2.5 17.4A2 2 0 0 0 4.2 20.5h15.6a2 2 0 0 0 1.7-3.1L13.7 3.9a2 2 0 0 0-3.4 0z',
+    saindo: 'M15 12H3.5M7 8l-4 4 4 4M13 3.5h5.5a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H13',
+    extrato: 'M6 3.5h9L19.5 8v12.5a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1zM14.5 3.5V8h5M8.5 12.5h7M8.5 16h4',
     lixo: 'M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7'
   };
 
@@ -3616,6 +3756,17 @@
   var abaInvestimentos = 'alocacao';
   var abaInicio = 'geral';
 
+  // No Empreendedor o botão redondo cadastra cliente; no resto, lançamento.
+  function noEmpreendedor() {
+    return telaAtiva === 'inicio' && abaInicio === 'empreendedor';
+  }
+
+  function ajustarFab() {
+    var b = $('fab');
+    if (!b) return;
+    b.setAttribute('aria-label', noEmpreendedor() ? 'Novo cliente' : 'Novo lançamento');
+  }
+
   var TELAS = [
     { id: 'inicio', rotulo: 'Início', icone: 'M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5' },
     { id: 'transacoes', rotulo: 'Transações', icone: 'M4 8h13l-3-3M20 16H7l3 3' },
@@ -3668,17 +3819,28 @@
   }
 
   function perguntarSaida() {
-    if (confirm('Deseja sair do Caixa?')) {
+    if (saindoDoApp || dialogoAberto) return;
+    perguntar({
+      titulo: 'Sair do Caixa?',
+      texto: 'Seus dados ficam guardados. É só abrir de novo quando quiser.',
+      ok: 'Sair', cancelar: 'Ficar no app', icone: 'saindo',
+      semHistorico: true,
+      aoCancelar: function () {
+        try { history.pushState({ caixa: 'app' }, ''); } catch (e) { /* idem */ }
+      }
+    }, function () {
+      saindoDoApp = true;
       try { history.back(); } catch (e) { /* nada a fazer */ }
-      return;
-    }
-    try { history.pushState({ caixa: 'app' }, ''); } catch (e) { /* idem */ }
+    });
   }
 
   function aoVoltar() {
+    if (saindoDoApp) return;
     if (!pilha.length) { perguntarSaida(); return; }
 
     var item = pilha.pop();
+
+    if (item.tipo === 'dialogo') { concluirDialogo(); return; }
 
     if (item.tipo === 'folha') { fecharFolhaEfeito(); if (sessao) desenhar(); return; }
     if (item.tipo === 'relatorio') { fecharRelatorioEfeito(); return; }
@@ -3701,6 +3863,7 @@
     });
     window.scrollTo(0, 0);
     desenhar();
+    ajustarFab();
   }
 
   function irPara(id) {
@@ -3825,6 +3988,7 @@
       desenharInicio();
     }));
 
+    ajustarFab();
     if (abaInicio === 'empreendedor') { desenharEmpreendedor(tela); return; }
 
     // Patrimônio
@@ -3898,9 +4062,11 @@
       cContas.appendChild(estadoVazio('Nenhuma conta', 'Cadastre suas contas para acompanhar o saldo de cada uma.'));
     } else {
       estado.contas.forEach(function (c) {
-        var linha = botao('linha', null, function () { abrirFolhaConta(c.id); });
         var s = saldoConta(c.id, null);
-        juntar(linha,
+
+        var linha = no('div', 'linha linha-dupla');
+        var alvo = botao('linha-alvo', null, function () { abrirExtratoConta(c.id); });
+        juntar(alvo,
           selo(c.cor, c.nome.charAt(0).toUpperCase()),
           juntar(no('div', 'linha-texto'),
             no('div', 'linha-titulo', c.nome),
@@ -3908,6 +4074,13 @@
           juntar(no('div', 'linha-fim'),
             no('div', 'linha-valor num' + (s < 0 ? ' vermelho' : ''), emReais(s)))
         );
+        linha.appendChild(alvo);
+
+        var lapis = botao('linha-acao', null, function () { abrirFolhaConta(c.id); });
+        lapis.setAttribute('aria-label', 'Editar a conta ' + c.nome);
+        lapis.appendChild(icone('lapis'));
+        linha.appendChild(lapis);
+
         cContas.appendChild(linha);
       });
       var totalLinha = no('div', 'linha');
@@ -4054,7 +4227,11 @@
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir cliente', function () {
           var quantos = servicosDoCliente(existente.id).length + pagamentosDoCliente(existente.id).length;
-          if (!confirm('Excluir ' + existente.nome + ' e seus ' + quantos + ' registro(s)? Não dá para desfazer.')) return;
+          perguntar({
+            titulo: 'Excluir ' + existente.nome + '?',
+            texto: 'Vão embora também os ' + quantos + ' registro(s) desse cliente. Não dá para desfazer.',
+            ok: 'Excluir cliente', tom: 'perigo'
+          }, function () {
           estado.servicos.forEach(function (s) { if (s.clienteId === existente.id) marcarExcluido('servicos', s.id); });
           estado.pagamentos.forEach(function (p) { if (p.clienteId === existente.id) marcarExcluido('pagamentos', p.id); });
           marcarExcluido('clientes', existente.id);
@@ -4065,6 +4242,7 @@
           fecharFolha();
           desenhar();
           avisar('Cliente excluído.');
+          });
         }));
       }
 
@@ -4225,13 +4403,18 @@
 
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir serviço', function () {
-          if (!confirm('Excluir este serviço?')) return;
-          marcarExcluido('servicos', existente.id);
-          estado.servicos = estado.servicos.filter(function (s) { return s.id !== existente.id; });
-          estado.pagamentos.forEach(function (p) { if (p.servicoId === existente.id) p.servicoId = ''; });
-          salvar();
-          voltarNavegacao();
-          avisar('Serviço excluído.');
+          perguntar({
+            titulo: 'Excluir este serviço?',
+            texto: 'Os pagamentos ligados a ele continuam registrados, mas soltos.',
+            ok: 'Excluir serviço', tom: 'perigo'
+          }, function () {
+            marcarExcluido('servicos', existente.id);
+            estado.servicos = estado.servicos.filter(function (s) { return s.id !== existente.id; });
+            estado.pagamentos.forEach(function (p) { if (p.servicoId === existente.id) p.servicoId = ''; });
+            salvar();
+            voltarNavegacao();
+            avisar('Serviço excluído.');
+          });
         }));
       }
 
@@ -4333,16 +4516,21 @@
 
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir pagamento', function () {
-          if (!confirm('Excluir este pagamento?')) return;
-          if (existente.lancamentoId) {
-            marcarExcluido('lancamentos', existente.lancamentoId);
-            estado.lancamentos = estado.lancamentos.filter(function (l) { return l.id !== existente.lancamentoId; });
-          }
-          marcarExcluido('pagamentos', existente.id);
-          estado.pagamentos = estado.pagamentos.filter(function (p) { return p.id !== existente.id; });
-          salvar();
-          voltarNavegacao();
-          avisar('Pagamento excluído.');
+          perguntar({
+            titulo: 'Excluir este pagamento?',
+            texto: 'O lançamento de entrada criado junto com ele também sai.',
+            ok: 'Excluir pagamento', tom: 'perigo'
+          }, function () {
+            if (existente.lancamentoId) {
+              marcarExcluido('lancamentos', existente.lancamentoId);
+              estado.lancamentos = estado.lancamentos.filter(function (l) { return l.id !== existente.lancamentoId; });
+            }
+            marcarExcluido('pagamentos', existente.id);
+            estado.pagamentos = estado.pagamentos.filter(function (p) { return p.id !== existente.id; });
+            salvar();
+            voltarNavegacao();
+            avisar('Pagamento excluído.');
+          });
         }));
       }
 
@@ -4489,6 +4677,102 @@
     return b;
   }
 
+  // Lançamentos que passaram por esta conta, do mais novo para o mais antigo.
+  function lancamentosDaConta(id) {
+    return estado.lancamentos.filter(function (l) {
+      return l.contaId === id || l.contaDestinoId === id;
+    }).sort(function (a, b) {
+      if (a.data !== b.data) return a.data < b.data ? 1 : -1;
+      return (b.criadoEm || 0) - (a.criadoEm || 0);
+    });
+  }
+
+  // Quanto este lançamento mexeu nesta conta: positivo entra, negativo sai.
+  function efeitoNaConta(l, id) {
+    if (l.tipo === 'entrada') return l.contaId === id ? l.valor : 0;
+    if (l.tipo === 'saida') return l.contaId === id ? -l.valor : 0;
+    if (l.contaDestinoId === id) return l.valor;
+    if (l.contaId === id) return -l.valor;
+    return 0;
+  }
+
+  function linhaExtrato(l, id) {
+    var efeito = efeitoNaConta(l, id);
+    var b = botao('linha', null, function () { abrirFolhaLancamento(l.id); });
+    var cor = efeito > 0 ? '#34D399' : efeito < 0 ? '#F87171' : '#60A5FA';
+    var sinal = efeito > 0 ? '+' : efeito < 0 ? '−' : '⇄';
+
+    var sub;
+    if (l.tipo === 'transferencia') {
+      var outra = achar(estado.contas, l.contaDestinoId === id ? l.contaId : l.contaDestinoId);
+      sub = (efeito > 0 ? 'Veio de ' : 'Foi para ') + (outra ? outra.nome : 'outra conta');
+    } else {
+      sub = l.categoria;
+    }
+
+    juntar(b,
+      selo(cor, sinal),
+      juntar(no('div', 'linha-texto'),
+        no('div', 'linha-titulo', l.descricao || (l.tipo === 'transferencia' ? 'Transferência' : l.categoria)),
+        no('div', 'linha-sub', sub)),
+      juntar(no('div', 'linha-fim'),
+        no('div', 'linha-valor num ' + (efeito > 0 ? 'verde' : efeito < 0 ? 'vermelho' : ''),
+          (efeito > 0 ? '+ ' : efeito < 0 ? '− ' : '') + emReais(Math.abs(efeito) || l.valor)))
+    );
+    return b;
+  }
+
+  function abrirExtratoConta(id) {
+    var conta = achar(estado.contas, id);
+    if (!conta) return;
+
+    abrirFolha(conta.nome, function (folha) {
+      var saldo = saldoConta(id, null);
+
+      var topo = cartao();
+      topo.appendChild(no('div', 'rotulo', 'Saldo atual'));
+      topo.appendChild(no('div', 'valorao num' + (saldo < 0 ? ' vermelho' : ''), emReais(saldo)));
+      topo.appendChild(no('div', 'linha-nota', conta.tipo + ' · saldo inicial de ' + emReais(conta.saldoInicial)));
+
+      var editar = botao('btn btn-fantasma', 'Editar esta conta', function () {
+        fecharFolha();
+        setTimeout(function () { abrirFolhaConta(id); }, 240);
+      });
+      editar.style.marginTop = '14px';
+      topo.appendChild(editar);
+      folha.appendChild(topo);
+
+      var itens = lancamentosDaConta(id);
+      if (!itens.length) {
+        var vazio = cartao('liso');
+        vazio.appendChild(estadoVazio('Nenhum movimento ainda',
+          'Os lançamentos feitos nesta conta aparecem aqui, do mais recente para o mais antigo.'));
+        folha.appendChild(vazio);
+        return;
+      }
+
+      var porDia = {};
+      var ordem = [];
+      itens.forEach(function (l) {
+        if (!porDia[l.data]) { porDia[l.data] = []; ordem.push(l.data); }
+        porDia[l.data].push(l);
+      });
+
+      ordem.forEach(function (data) {
+        var doDia = porDia[data];
+        var totalDia = doDia.reduce(function (soma, l) { return soma + efeitoNaConta(l, id); }, 0);
+
+        var cab = no('div', 'dia-cabecalho');
+        juntar(cab, no('div', 'dia-nome', nomeDoDia(data)), no('div', 'dia-total num', comSinal(totalDia)));
+        folha.appendChild(cab);
+
+        var cartaoDia = cartao('liso');
+        doDia.forEach(function (l) { cartaoDia.appendChild(linhaExtrato(l, id)); });
+        folha.appendChild(cartaoDia);
+      });
+    });
+  }
+
   // ---------- Tela: Investimentos ----------
 
   function desenharInvestimentos() {
@@ -4550,7 +4834,7 @@
         var rend = a.aplicado > 0 ? ((atual - a.aplicado) / a.aplicado) * 100 : 0;
         var linha = botao('linha', null, function () { abrirFolhaAtivo(a.id); });
         juntar(linha,
-          selo(CORES[CLASSES_ATIVO.indexOf(a.classe) % CORES.length], a.nome.charAt(0).toUpperCase()),
+          selo(corDeCategoria(a.classe), a.nome.charAt(0).toUpperCase()),
           juntar(no('div', 'linha-texto'),
             no('div', 'linha-titulo', a.nome),
             no('div', 'linha-sub', a.classe)),
@@ -4977,9 +5261,14 @@
     cDados.appendChild(novidades);
 
     var sairLinha = botao('linha', null, function () {
-      if (!confirm('Sair da conta? Seus dados continuam guardados neste aparelho.')) return;
-      if (NUVEM.ligada) { nuvemSairDoServidor().then(sair); return; }
-      sair();
+      perguntar({
+        titulo: 'Sair da conta?',
+        texto: 'Seus dados continuam guardados neste aparelho e na nuvem.',
+        ok: 'Sair da conta', icone: 'saindo'
+      }, function () {
+        if (NUVEM.ligada) { nuvemSairDoServidor().then(sair); return; }
+        sair();
+      });
     });
     juntar(sairLinha,
       selo('#94A3B4', '⇥'),
@@ -5079,6 +5368,90 @@
   function fecharFolha() {
     if (topoEh('folha')) voltarNavegacao();
     else fecharFolhaEfeito();
+  }
+
+  // ---------- Caixa de pergunta ----------
+  //
+  // No lugar do confirm() do navegador, que aparece com o endereço do site e
+  // quebra o acabamento. Como não dá para parar o código esperando resposta,
+  // quem chama passa o que fazer quando a pessoa confirma.
+
+  var dialogoAberto = false;
+  var dialogoAtual = null;
+  var saindoDoApp = false;
+
+  function perguntar(opcoes, aoConfirmar) {
+    var fundo = $('dialogoFundo');
+    var caixa = fundo.firstElementChild;
+
+    var quadro = $('dialogoIcone');
+    quadro.textContent = '';
+    quadro.appendChild(icone(opcoes.icone || 'alerta'));
+
+    $('dialogoTitulo').textContent = opcoes.titulo;
+    var texto = $('dialogoTexto');
+    texto.textContent = opcoes.texto || '';
+    texto.style.display = opcoes.texto ? '' : 'none';
+
+    caixa.className = 'dialogo' + (opcoes.tom === 'perigo' ? ' perigo' : '');
+
+    var acoes = $('dialogoAcoes');
+    acoes.textContent = '';
+    acoes.appendChild(botao(
+      'btn ' + (opcoes.tom === 'perigo' ? 'btn-vermelho' : 'btn-ouro'),
+      opcoes.ok || 'Confirmar',
+      function () { responderDialogo(true); }
+    ));
+    if (!opcoes.soAviso) {
+      acoes.appendChild(botao('btn btn-discreto', opcoes.cancelar || 'Cancelar',
+        function () { responderDialogo(false); }));
+    }
+
+    dialogoAtual = {
+      aoConfirmar: aoConfirmar,
+      aoCancelar: opcoes.aoCancelar,
+      escolha: false
+    };
+
+    fundo.hidden = false;
+    document.body.style.overflow = 'hidden';
+    // Um quadro de espera para o navegador enxergar a mudança e animar.
+    requestAnimationFrame(function () { fundo.classList.add('aberta'); });
+
+    dialogoAberto = true;
+    if (!opcoes.semHistorico) empilhar({ tipo: 'dialogo' });
+  }
+
+  function avisarCaixa(titulo, texto, aoFechar) {
+    perguntar({ titulo: titulo, texto: texto, ok: 'Entendi', soAviso: true }, aoFechar);
+  }
+
+  function fecharDialogoEfeito() {
+    var fundo = $('dialogoFundo');
+    fundo.classList.remove('aberta');
+    dialogoAberto = false;
+    window.setTimeout(function () { if (!dialogoAberto) fundo.hidden = true; }, 220);
+    document.body.style.overflow =
+      folhaAberta || !$('entrada').classList.contains('escondida') ? 'hidden' : '';
+  }
+
+  // Botão da caixa: quem fecha de verdade é a volta do histórico, para o
+  // botão voltar do celular e o toque no botão seguirem o mesmo caminho.
+  function responderDialogo(sim) {
+    if (!dialogoAtual) return;
+    dialogoAtual.escolha = sim;
+    if (topoEh('dialogo')) { voltarNavegacao(); return; }
+    concluirDialogo();
+  }
+
+  function concluirDialogo() {
+    var atual = dialogoAtual;
+    dialogoAtual = null;
+    fecharDialogoEfeito();
+    if (!atual) return;
+    var acao = atual.escolha ? atual.aoConfirmar : atual.aoCancelar;
+    // Fora deste passo, para não misturar com a volta do histórico.
+    if (acao) window.setTimeout(acao, 0);
   }
 
   function campo(rotulo, controle) {
@@ -5352,13 +5725,18 @@
 
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir lançamento', function () {
-          if (!confirm('Excluir este lançamento? Não dá para desfazer.')) return;
-          marcarExcluido('lancamentos', existente.id);
-          estado.lancamentos = estado.lancamentos.filter(function (l) { return l.id !== existente.id; });
-          salvar();
-          fecharFolha();
-          desenhar();
-          avisar('Lançamento excluído.');
+          perguntar({
+            titulo: 'Excluir este lançamento?',
+            texto: 'Não dá para desfazer.',
+            ok: 'Excluir lançamento', tom: 'perigo'
+          }, function () {
+            marcarExcluido('lancamentos', existente.id);
+            estado.lancamentos = estado.lancamentos.filter(function (l) { return l.id !== existente.id; });
+            salvar();
+            fecharFolha();
+            desenhar();
+            avisar('Lançamento excluído.');
+          });
         }));
       }
 
@@ -5445,16 +5823,22 @@
             return l.contaId === existente.id || l.contaDestinoId === existente.id;
           }).length;
           if (usada) {
-            alert('Esta conta tem ' + usada + ' lançamento(s). Mova ou exclua esses lançamentos antes de apagar a conta.');
+            avisarCaixa('Ainda há lançamentos aqui',
+              'Esta conta tem ' + usada + ' lançamento(s). Mova ou exclua esses lançamentos antes de apagar a conta.');
             return;
           }
-          if (!confirm('Excluir a conta ' + existente.nome + '?')) return;
-          marcarExcluido('contas', existente.id);
-          estado.contas = estado.contas.filter(function (c) { return c.id !== existente.id; });
-          salvar();
-          fecharFolha();
-          desenhar();
-          avisar('Conta excluída.');
+          perguntar({
+            titulo: 'Excluir a conta ' + existente.nome + '?',
+            texto: 'A conta some das telas e dos relatórios.',
+            ok: 'Excluir conta', tom: 'perigo'
+          }, function () {
+            marcarExcluido('contas', existente.id);
+            estado.contas = estado.contas.filter(function (c) { return c.id !== existente.id; });
+            salvar();
+            fecharFolha();
+            desenhar();
+            avisar('Conta excluída.');
+          });
         }));
       }
 
@@ -5519,16 +5903,21 @@
 
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir ativo', function () {
-          if (!confirm('Excluir ' + existente.nome + '? Não dá para desfazer.')) return;
-          marcarExcluido('ativos', existente.id);
-          estado.ativos.forEach(function (a) {
-            if (a.id === existente.id) a.historico.forEach(function (h) { marcarExcluido('ativo_historico', a.id + '|' + h.data); });
+          perguntar({
+            titulo: 'Excluir ' + existente.nome + '?',
+            texto: 'O histórico de valores desse ativo vai junto. Não dá para desfazer.',
+            ok: 'Excluir ativo', tom: 'perigo'
+          }, function () {
+            marcarExcluido('ativos', existente.id);
+            estado.ativos.forEach(function (a) {
+              if (a.id === existente.id) a.historico.forEach(function (h) { marcarExcluido('ativo_historico', a.id + '|' + h.data); });
+            });
+            estado.ativos = estado.ativos.filter(function (a) { return a.id !== existente.id; });
+            salvar();
+            fecharFolha();
+            desenhar();
+            avisar('Ativo excluído.');
           });
-          estado.ativos = estado.ativos.filter(function (a) { return a.id !== existente.id; });
-          salvar();
-          fecharFolha();
-          desenhar();
-          avisar('Ativo excluído.');
         }));
       }
 
@@ -5595,13 +5984,18 @@
 
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir meta', function () {
-          if (!confirm('Excluir a meta ' + existente.nome + '?')) return;
-          marcarExcluido('metas', existente.id);
-          estado.metas = estado.metas.filter(function (m) { return m.id !== existente.id; });
-          salvar();
-          fecharFolha();
-          desenhar();
-          avisar('Meta excluída.');
+          perguntar({
+            titulo: 'Excluir a meta ' + existente.nome + '?',
+            texto: 'O valor já guardado não é lançado de volta em nenhuma conta.',
+            ok: 'Excluir meta', tom: 'perigo'
+          }, function () {
+            marcarExcluido('metas', existente.id);
+            estado.metas = estado.metas.filter(function (m) { return m.id !== existente.id; });
+            salvar();
+            fecharFolha();
+            desenhar();
+            avisar('Meta excluída.');
+          });
         }));
       }
 
@@ -6254,15 +6648,19 @@
         return;
       }
 
-      if (!confirm('Restaurar ' + limpo.lancamentos.length + ' lançamento(s), ' +
-                   limpo.contas.length + ' conta(s), ' + limpo.ativos.length + ' ativo(s) e ' +
-                   limpo.metas.length + ' meta(s)? Isso substitui tudo o que está no aplicativo agora.')) return;
-
-      estado = limpo;
-      salvar();
-      fecharFolha();
-      desenhar();
-      avisar('Backup restaurado.');
+      perguntar({
+        titulo: 'Restaurar este backup?',
+        texto: 'São ' + limpo.lancamentos.length + ' lançamento(s), ' + limpo.contas.length +
+               ' conta(s), ' + limpo.ativos.length + ' ativo(s) e ' + limpo.metas.length +
+               ' meta(s). Isso substitui tudo o que está no aplicativo agora.',
+        ok: 'Restaurar', tom: 'perigo'
+      }, function () {
+        estado = limpo;
+        salvar();
+        fecharFolha();
+        desenhar();
+        avisar('Backup restaurado.');
+      });
     };
 
     leitor.onerror = function () { avisar('Não foi possível ler o arquivo.'); };
@@ -6272,12 +6670,22 @@
   function apagarTudo() {
     var quanto = estado.lancamentos.length + estado.contas.length + estado.ativos.length + estado.metas.length;
     if (!quanto) { avisar('Não há nada para apagar.'); return; }
-    if (!confirm('Apagar todos os seus dados do Caixa? São ' + quanto + ' registros.')) return;
-    if (!confirm('Tem certeza mesmo? Faça um backup antes, se quiser guardar.')) return;
-    estado = estadoPadrao();
-    salvar();
-    desenhar();
-    avisar('Tudo apagado.');
+    perguntar({
+      titulo: 'Apagar todos os seus dados?',
+      texto: 'São ' + quanto + ' registros deste aparelho.',
+      ok: 'Quero apagar', tom: 'perigo'
+    }, function () {
+      perguntar({
+        titulo: 'Tem certeza mesmo?',
+        texto: 'Depois disso não tem volta. Faça um backup antes, se quiser guardar.',
+        ok: 'Apagar tudo', cancelar: 'Melhor não', tom: 'perigo'
+      }, function () {
+        estado = estadoPadrao();
+        salvar();
+        desenhar();
+        avisar('Tudo apagado.');
+      });
+    });
   }
 
   // ---------- Avisos ----------
@@ -6342,7 +6750,10 @@
 
   // ---------- Ligações ----------
 
-  $('fab').addEventListener('click', function () { abrirFolhaLancamento(null); });
+  $('fab').addEventListener('click', function () {
+    if (noEmpreendedor()) abrirFolhaCliente(null);
+    else abrirFolhaLancamento(null);
+  });
   $('cortina').addEventListener('click', fecharFolha);
   $('relFechar').addEventListener('click', fecharRelatorio);
   $('relImprimir').addEventListener('click', function () { window.print(); });

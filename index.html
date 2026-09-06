@@ -527,6 +527,17 @@
   .dialogo .btn-discreto { color: var(--suave); font-weight: 600; padding: 12px; }
   .dialogo .btn-discreto:active { background: var(--cartao-2); }
 
+  .rotulo-secao {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ouro);
+    margin: 22px 0 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--borda);
+  }
+
   .telefone-linha {
     display: flex;
     align-items: center;
@@ -1330,13 +1341,24 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.5.0';
+  var VERSAO = '3.6.0';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.6.0',
+      data: '2026-09-06',
+      itens: [
+        'Ao receber, você escolhe a qual parcela aquele dinheiro se refere.',
+        'Juros, multa e taxa podem ser lançados na hora do recebimento, qualquer que seja o valor pago.',
+        'A parcela fecha com o que foi recebido, mesmo pagando o mínimo ou menos: não fica mais nada em vermelho.',
+        'O que faltou volta para o fim do combinado, em parcelas do mesmo tamanho das que já existem, até fechar o total devido com juros, multa e taxa.',
+        'Pagando a mais, a sobra abate as próximas parcelas.'
+      ]
+    },
     {
       versao: '3.5.0',
       data: '2026-09-06',
@@ -4504,6 +4526,83 @@
     return !parcelaPaga(p) && pagoNaParcela(p) > 0;
   }
 
+  // ---------- O plano de parcelas ----------
+  //
+  // Parcelas do mesmo cliente e do mesmo registro fazem parte do mesmo
+  // combinado. É nele que a numeração e o remanejamento acontecem.
+
+  function planoDaParcela(p) {
+    return estado.parcelas.filter(function (o) {
+      return o.clienteId === p.clienteId && (o.servicoId || '') === (p.servicoId || '');
+    }).sort(function (a, b) {
+      if (a.vencimento !== b.vencimento) return a.vencimento < b.vencimento ? -1 : 1;
+      return (a.criadoEm || 0) - (b.criadoEm || 0);
+    });
+  }
+
+  // Nenhuma parcela nova passa da maior que já existe no combinado.
+  function tetoDoPlano(plano) {
+    var teto = 0;
+    plano.forEach(function (p) { if (p.valor > teto) teto = p.valor; });
+    return teto;
+  }
+
+  function renumerarPlano(plano) {
+    plano.forEach(function (p, i) { p.numero = i + 1; p.total = plano.length; });
+  }
+
+  // O que faltou pagar volta para o fim do combinado, em parcelas do mesmo
+  // tamanho das que já existem, até fechar a conta.
+  function empurrarFalta(parcela, falta) {
+    if (falta <= 0) return 0;
+    var plano = planoDaParcela(parcela);
+    var teto = tetoDoPlano(plano) || falta;
+    var vencimento = plano.length ? plano[plano.length - 1].vencimento : parcela.vencimento;
+    var resto = falta;
+    var criadas = 0;
+
+    while (resto > 0 && criadas < 60) {
+      var valor = Math.min(resto, teto);
+      vencimento = somaMeses(vencimento, 1);
+      estado.parcelas.push({
+        id: novoId(),
+        clienteId: parcela.clienteId,
+        servicoId: parcela.servicoId,
+        numero: 0, total: 0,
+        valor: valor,
+        vencimento: vencimento,
+        minimo: Math.min(parcela.minimo || 0, valor),
+        jurosAtraso: parcela.jurosAtraso || 0,
+        quitadaEm: '', pagamentoId: '',
+        criadoEm: Date.now() + criadas
+      });
+      resto -= valor;
+      criadas += 1;
+    }
+
+    renumerarPlano(planoDaParcela(parcela));
+    return criadas;
+  }
+
+  // Pagou mais do que devia: a sobra abate as próximas parcelas em aberto.
+  function abaterSobra(parcela, sobra) {
+    if (sobra <= 0) return 0;
+    var quitadas = 0;
+    planoDaParcela(parcela).forEach(function (p) {
+      if (sobra <= 0 || p.id === parcela.id || parcelaPaga(p)) return;
+      if (sobra >= p.valor) {
+        sobra -= p.valor;
+        p.quitadaEm = hojeTexto();
+        quitadas += 1;
+      } else {
+        p.valor -= sobra;
+        sobra = 0;
+      }
+    });
+    renumerarPlano(planoDaParcela(parcela));
+    return quitadas;
+  }
+
   // O último pagamento lançado nesta parcela, para abrir a ficha dele.
   function pagamentoDaParcela(p) {
     var achado = '';
@@ -4518,12 +4617,6 @@
     return Math.min(p.minimo, falta);
   }
 
-  // Depois de receber, marca a parcela como quitada se o total foi coberto.
-  function conferirQuitacao(parcela, dataPagamento) {
-    if (!parcela || parcela.quitadaEm) return;
-    var devido = parcela.valor + jurosDaParcela(parcela);
-    if (pagoNaParcela(parcela) >= devido - 1) parcela.quitadaEm = dataPagamento || hojeTexto();
-  }
 
   // O que já venceu e ainda não foi pago.
   function atrasoDoCliente(id) {
@@ -5876,71 +5969,33 @@
     abrirFolha(existente ? 'Editar pagamento' : 'Registrar pagamento', function (folha) {
       var forma = no('div');
 
-      var faltaParcela = parcela ? faltaNaParcela(parcela) : 0;
-      var minimoParcela = parcela ? minimoDaParcela(parcela) : 0;
-      var jurosParcela = parcela ? jurosDaParcela(parcela) : 0;
-
-      var campoValorEl = entradaValor(existente ? existente.valor : faltaParcela, true);
+      var campoValorEl = entradaValor(existente ? existente.valor : 0, true);
       campoValorEl.style.color = 'var(--verde)';
       forma.appendChild(campo('Valor recebido', campoValorEl));
 
-      if (parcela) {
-        var notaParcela = no('div', 'linha-nota',
-          'Parcela ' + parcela.numero + ' de ' + parcela.total + ', com vencimento em ' +
-          dataBr(parcela.vencimento) + '.' +
-          (jurosParcela > 0 ? ' Com ' + emReais(jurosParcela) + ' de juros de atraso.' : ''));
-        notaParcela.style.margin = '-8px 0 14px';
-        forma.appendChild(notaParcela);
-
-        var atalhosParcela = no('div', 'chips');
-        atalhosParcela.appendChild(botao('chip', 'Tudo: ' + emReais(faltaParcela), function () {
-          campoValorEl.value = emReais(faltaParcela);
-          pintarSobra();
+      // ---- a qual parcela este dinheiro se refere ----
+      var abertas = parcelasDoCliente(clienteId).filter(function (p) {
+        return !parcelaPaga(p) || (parcela && p.id === parcela.id);
+      });
+      var opcoesParcela = [{ valor: '', rotulo: 'Sem parcela específica' }].concat(
+        abertas.map(function (p) {
+          var servicoP = p.servicoId ? achar(estado.servicos, p.servicoId) : null;
+          return {
+            valor: p.id,
+            rotulo: 'Parcela ' + p.numero + ' de ' + p.total,
+            detalhe: 'vence em ' + dataBr(p.vencimento) + ' · ' + emReais(faltaNaParcela(p)) +
+              (servicoP ? ' · ' + servicoP.nome : '')
+          };
         }));
-        if (minimoParcela > 0 && minimoParcela < faltaParcela) {
-          atalhosParcela.appendChild(botao('chip', 'Mínimo: ' + emReais(minimoParcela), function () {
-            campoValorEl.value = emReais(minimoParcela);
-            pintarSobra();
-          }));
-        }
-        atalhosParcela.appendChild(botao('chip', 'Metade', function () {
-          campoValorEl.value = emReais(Math.round(faltaParcela / 2));
-          pintarSobra();
-        }));
-        forma.appendChild(campo('Faltam ' + emReais(faltaParcela), atalhosParcela));
 
-        var notaSobra = no('div', 'linha-nota');
-        notaSobra.style.margin = '-8px 0 14px';
-        forma.appendChild(notaSobra);
-
-        var pintarSobra = function () {
-          var v = digitosParaCentavos(campoValorEl.value);
-          if (v <= 0) { notaSobra.textContent = ''; return; }
-          if (v >= faltaParcela) {
-            notaSobra.className = 'linha-nota verde';
-            notaSobra.textContent = 'Quita a parcela.' +
-              (v > faltaParcela ? ' Sobram ' + emReais(v - faltaParcela) + ' de crédito com você.' : '');
-            return;
-          }
-          notaSobra.className = 'linha-nota ouro';
-          notaSobra.textContent = 'Pagamento parcial: ficam ' + emReais(faltaParcela - v) +
-            ' em aberto nesta parcela.' +
-            (minimoParcela > 0 && v < minimoParcela ? ' É menos que o mínimo de ' + emReais(minimoParcela) + '.' : '');
-        };
-        campoValorEl.addEventListener('input', pintarSobra);
-        pintarSobra();
+      var campoParcela = null;
+      if (!existente && abertas.length) {
+        campoParcela = entradaSelecao(opcoesParcela, parcela ? parcela.id : '', 'Equivale a qual parcela');
+        forma.appendChild(campo('Equivale a qual parcela', campoParcela));
       }
 
-      if (!existente && !parcela && r.restante > 0) {
-        var atalhos = no('div', 'chips');
-        atalhos.appendChild(botao('chip', 'Tudo: ' + emReais(r.restante), function () {
-          campoValorEl.value = emReais(r.restante);
-        }));
-        atalhos.appendChild(botao('chip', 'Metade', function () {
-          campoValorEl.value = emReais(Math.round(r.restante / 2));
-        }));
-        forma.appendChild(campo('Falta ' + emReais(r.restante), atalhos));
-      }
+      var caixaAtalhos = no('div');
+      forma.appendChild(caixaAtalhos);
 
       var campoData = entradaData(existente ? existente.data : hojeTexto());
       forma.appendChild(campo('Data do pagamento', campoData));
@@ -5952,6 +6007,145 @@
       var campoServico = entradaSelecao(opcoesServico,
         existente ? existente.servicoId : (parcela ? parcela.servicoId : ''), 'Referente a');
       forma.appendChild(campo('Referente a', campoServico));
+
+      // ---- juros, multa e taxa lançados na hora ----
+      var campoJuros = null, campoMulta = null, campoTaxa = null, resumoParcela = null;
+      if (!existente) {
+        forma.appendChild(no('div', 'rotulo-secao', 'Acréscimos deste pagamento'));
+
+        campoJuros = entradaValor(0, false);
+        forma.appendChild(campo('Juros de atraso', campoJuros));
+        campoMulta = entradaValor(0, false);
+        forma.appendChild(campo('Multa', campoMulta));
+        campoTaxa = entradaValor(0, false);
+        forma.appendChild(campo('Taxa', campoTaxa));
+
+        resumoParcela = cartao();
+        forma.appendChild(resumoParcela);
+      }
+
+      function parcelaAtual() {
+        if (existente) return null;
+        var id = campoParcela ? campoParcela.value : (parcela ? parcela.id : '');
+        return id ? achar(estado.parcelas, id) : null;
+      }
+
+      function acrescimos() {
+        if (existente) return 0;
+        return digitosParaCentavos(campoJuros.value) +
+               digitosParaCentavos(campoMulta.value) +
+               digitosParaCentavos(campoTaxa.value);
+      }
+
+      // Quanto esta parcela deve hoje, já com o que foi lançado agora.
+      function devidoAgora(p) {
+        return p ? faltaNaParcela(p) + acrescimos() : 0;
+      }
+
+      function pintarAtalhos() {
+        caixaAtalhos.textContent = '';
+        var p = parcelaAtual();
+        if (!p) {
+          if (!existente && r.restante > 0) {
+            var chips = no('div', 'chips');
+            chips.appendChild(botao('chip', 'Tudo: ' + emReais(r.restante), function () {
+              campoValorEl.value = emReais(r.restante); pintarResumo();
+            }));
+            chips.appendChild(botao('chip', 'Metade', function () {
+              campoValorEl.value = emReais(Math.round(r.restante / 2)); pintarResumo();
+            }));
+            caixaAtalhos.appendChild(campo('Falta ' + emReais(r.restante), chips));
+          }
+          return;
+        }
+        var devido = devidoAgora(p);
+        var minimo = Math.min(minimoDaParcela(p) || 0, devido);
+        var chipsP = no('div', 'chips');
+        chipsP.appendChild(botao('chip', 'Tudo: ' + emReais(devido), function () {
+          campoValorEl.value = emReais(devido); pintarResumo();
+        }));
+        if (minimo > 0 && minimo < devido) {
+          chipsP.appendChild(botao('chip', 'Mínimo: ' + emReais(minimo), function () {
+            campoValorEl.value = emReais(minimo); pintarResumo();
+          }));
+        }
+        chipsP.appendChild(botao('chip', 'Metade', function () {
+          campoValorEl.value = emReais(Math.round(devido / 2)); pintarResumo();
+        }));
+        caixaAtalhos.appendChild(campo('Devido nesta parcela: ' + emReais(devido), chipsP));
+      }
+
+      function pintarResumo() {
+        if (!resumoParcela) return;
+        resumoParcela.textContent = '';
+        var p = parcelaAtual();
+        var recebido = digitosParaCentavos(campoValorEl.value);
+        var extra = acrescimos();
+
+        if (!p) {
+          resumoParcela.appendChild(no('div', 'linha-sub',
+            extra > 0
+              ? 'Sem parcela escolhida, os ' + emReais(extra) + ' de acréscimo entram como valor a receber deste cliente.'
+              : 'Escolha a parcela para o app fechar a conta dela e remanejar o que faltar.'));
+          return;
+        }
+
+        var devido = devidoAgora(p);
+        var falta = Math.max(devido - recebido, 0);
+        var sobra = Math.max(recebido - devido, 0);
+
+        resumoParcela.appendChild(no('div', 'rotulo', 'Parcela ' + p.numero + ' de ' + p.total));
+        [
+          ['Valor da parcela', emReais(faltaNaParcela(p))],
+          ['Acréscimos agora', emReais(extra)],
+          ['Devido', emReais(devido)],
+          ['Recebendo', emReais(recebido)]
+        ].forEach(function (par) {
+          var l = no('div', 'parcela-linha');
+          juntar(l, no('span', 'q', par[0]), no('span', 'v num', par[1]));
+          resumoParcela.appendChild(l);
+        });
+
+        if (falta > 0) {
+          var teto = tetoDoPlano(planoDaParcela(p)) || falta;
+          var quantas = Math.ceil(falta / teto);
+          resumoParcela.appendChild(no('div', 'linha-nota ouro',
+            'A parcela fecha assim mesmo. Os ' + emReais(falta) + ' que faltaram viram ' +
+            quantas + ' parcela(s) no fim do combinado, de no máximo ' + emReais(teto) + ' cada.'));
+        } else if (sobra > 0) {
+          resumoParcela.appendChild(no('div', 'linha-nota verde',
+            'A parcela fecha e os ' + emReais(sobra) + ' que sobraram abatem as próximas.'));
+        } else {
+          resumoParcela.appendChild(no('div', 'linha-nota verde', 'Fecha a parcela na conta certa.'));
+        }
+      }
+
+      function atualizar() { pintarAtalhos(); pintarResumo(); }
+
+      campoValorEl.addEventListener('input', pintarResumo);
+      if (campoParcela) {
+        campoParcela.aoMudar = function () {
+          var p = parcelaAtual();
+          if (p) {
+            // Sugere os juros de atraso já calculados e o valor cheio.
+            if (campoJuros) campoJuros.value = emReais(jurosDaParcela(p));
+            campoValorEl.value = emReais(devidoAgora(p));
+            if (p.servicoId) campoServico.value = p.servicoId;
+          }
+          atualizar();
+        };
+      }
+      if (campoJuros) {
+        [campoJuros, campoMulta, campoTaxa].forEach(function (c) {
+          c.addEventListener('input', atualizar);
+        });
+        var inicial = parcelaAtual();
+        if (inicial) {
+          campoJuros.value = emReais(jurosDaParcela(inicial));
+          campoValorEl.value = emReais(devidoAgora(inicial));
+        }
+      }
+      atualizar();
 
       var proximaDepois = proximoVencimento(clienteId);
       if (proximaDepois) {
@@ -5992,7 +6186,10 @@
           existente.data = campoData.value;
           existente.servicoId = campoServico.value;
         } else {
+          var alvo = parcelaAtual();
+          var extra = acrescimos();
           var lancamentoId = '';
+
           if (lancarNoCaixa && campoConta) {
             lancamentoId = novoId();
             var servico = campoServico.value ? achar(estado.servicos, campoServico.value) : null;
@@ -6008,14 +6205,41 @@
               criadoEm: Date.now()
             });
           }
-          var idPagamento = novoId();
+
+          // Juros, multa e taxa são dinheiro a mais a receber: entram como
+          // registro próprio, senão a conta do cliente não fecha.
+          if (extra > 0) {
+            var partes = [];
+            if (digitosParaCentavos(campoJuros.value) > 0) partes.push('juros');
+            if (digitosParaCentavos(campoMulta.value) > 0) partes.push('multa');
+            if (digitosParaCentavos(campoTaxa.value) > 0) partes.push('taxa');
+            estado.servicos.push({
+              id: novoId(), clienteId: clienteId,
+              nome: partes.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) +
+                (alvo ? ' — parcela ' + alvo.numero + ' de ' + alvo.total : ''),
+              tipo: 'Outros', valor: extra,
+              data: campoData.value, obs: '', criadoEm: Date.now()
+            });
+          }
+
+          var devido = alvo ? devidoAgora(alvo) : 0;
           estado.pagamentos.push({
-            id: idPagamento, clienteId: clienteId, servicoId: campoServico.value,
+            id: novoId(), clienteId: clienteId, servicoId: campoServico.value,
             valor: valor, data: campoData.value,
-            parcelaId: parcela ? parcela.id : '',
+            parcelaId: alvo ? alvo.id : '',
             lancamentoId: lancamentoId, criadoEm: Date.now()
           });
-          if (parcela) conferirQuitacao(parcela, campoData.value);
+
+          if (alvo) {
+            // A parcela fecha com o que foi recebido, seja quanto for. O que
+            // faltou volta para o fim do combinado; o que sobrou abate as
+            // próximas.
+            alvo.quitadaEm = campoData.value;
+            var falta = Math.max(devido - valor, 0);
+            var sobra = Math.max(valor - devido, 0);
+            if (falta > 0) empurrarFalta(alvo, falta);
+            else if (sobra > 0) abaterSobra(alvo, sobra);
+          }
         }
 
         salvar();
@@ -6027,7 +6251,8 @@
         acoes.appendChild(botao('btn btn-perigo', 'Excluir pagamento', function () {
           perguntar({
             titulo: 'Excluir este pagamento?',
-            texto: 'O lançamento de entrada criado junto com ele também sai.',
+            texto: 'O lançamento de entrada criado junto com ele também sai, e a parcela volta a ficar em aberto. ' +
+              'As parcelas que nasceram do que faltou continuam onde estão — apague na mão se não quiser.',
             ok: 'Excluir pagamento', tom: 'perigo'
           }, function () {
             if (existente.lancamentoId) {

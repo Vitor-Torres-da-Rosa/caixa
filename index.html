@@ -1341,13 +1341,22 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.6.2';
+  var VERSAO = '3.6.3';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.6.3',
+      data: '2026-09-06',
+      itens: [
+        'O ícone do WhatsApp ao lado do número deixou de ser um liga-desliga: agora ele verifica o número.',
+        'Tocando nele, o app diz o que achou pelo formato, deixa você abrir a conversa para testar ou marcar na mão.',
+        'O botão "Verificar quais têm WhatsApp" saiu: ficou só o ícone.'
+      ]
+    },
     {
       versao: '3.6.2',
       data: '2026-09-06',
@@ -5141,10 +5150,7 @@
 
           var entrada = entradaTelefone(item.numero);
           var alterna = botao('linha-acao', null, function () {
-            item.whats = !item.whats;
-            item.tocado = true;
-            pintarAlterna();
-            contarNumeros();
+            verificarNumero(item, pintarAlterna);
           });
           alterna.appendChild(iconeWhatsapp());
 
@@ -5152,14 +5158,15 @@
           // teclado do ar no meio da digitação.
           function pintarAlterna() {
             alterna.className = 'linha-acao' + (item.whats ? ' tem-whats' : '');
-            alterna.setAttribute('aria-label', (item.whats ? 'Tem' : 'Não tem') + ' WhatsApp');
+            alterna.setAttribute('aria-label', 'Verificar o WhatsApp deste número');
+            alterna.title = item.whats ? 'Marcado como WhatsApp' : 'Marcado como sem WhatsApp';
           }
           pintarAlterna();
 
           entrada.addEventListener('input', function () {
             item.numero = soDigitos(entrada.value);
             // Fixo não costuma ter WhatsApp; celular sim. Depois que você
-            // mexe no ícone verde, a sua escolha manda.
+            // decide no ícone verde, a sua escolha manda.
             if (!item.tocado) { item.whats = pareceCelular(item.numero); pintarAlterna(); }
             contarNumeros();
           });
@@ -5190,14 +5197,6 @@
           caixaNumeros.appendChild(somar);
         }
 
-        var verificar = botao('btn btn-fantasma', 'Verificar quais têm WhatsApp', function () {
-          verificarNumeros();
-        });
-        verificar.style.padding = '11px';
-        verificar.style.fontSize = '14px';
-        verificar.style.marginTop = '8px';
-        caixaNumeros.appendChild(verificar);
-
         contarNumeros();
       }
 
@@ -5206,39 +5205,59 @@
         var comWhats = validos.filter(function (t) { return t.whats; });
         resumoNumeros.textContent = '';
         if (!validos.length) {
-          resumoNumeros.appendChild(document.createTextNode('Marque o ícone verde nos números que atendem no WhatsApp.'));
+          resumoNumeros.appendChild(document.createTextNode(
+            'Toque no ícone do WhatsApp para verificar cada número.'));
           return;
         }
         resumoNumeros.appendChild(no('span', 'n', comWhats.length + ' de ' + validos.length));
         resumoNumeros.appendChild(document.createTextNode(
-          ' número(s) marcado(s) com WhatsApp. O ícone verde liga e desliga cada um.'));
+          ' número(s) com WhatsApp. Toque no ícone para verificar ou testar.'));
       }
 
       // Nenhum site consegue perguntar ao WhatsApp quem tem conta: isso não
-      // é aberto. Então marcamos pelo formato (celular sim, fixo não) e
-      // deixamos você abrir a conversa para confirmar de verdade.
-      function verificarNumeros() {
-        var validos = numeros.filter(function (t) { return numeroWhatsapp(t.numero); });
-        if (!validos.length) {
-          avisarCaixa('Nenhum número completo', 'Escreva ao menos um número com DDD para poder verificar.');
+      // é aberto. O app olha o formato do número (celular sim, fixo não),
+      // já deixa marcado o que achou, e a confirmação de verdade é abrir a
+      // conversa. Se ele errar, você marca na mão aqui mesmo.
+      function verificarNumero(item, aoPintar) {
+        if (!numeroWhatsapp(item.numero)) {
+          avisarCaixa('Número incompleto',
+            'Escreva o número com DDD para o app poder verificar.');
           return;
         }
-        var mudou = 0;
-        validos.forEach(function (t) {
-          var esperado = pareceCelular(t.numero);
-          t.tocado = false;
-          if (t.whats !== esperado) { t.whats = esperado; mudou += 1; }
-        });
-        pintarNumeros();
-        perguntar({
-          titulo: mudou ? mudou + ' número(s) remarcado(s)' : 'Nada mudou',
-          texto: 'Marcamos como WhatsApp os números de celular (11 dígitos com o 9 na frente) e ' +
-            'desmarcamos os fixos. O WhatsApp não deixa nenhum site consultar quem tem conta, ' +
-            'então a confirmação de verdade é abrindo a conversa.',
-          ok: 'Abrir a conversa para testar', cancelar: 'Deixar assim', icone: 'alerta'
-        }, function () {
-          var alvo = validos.filter(function (t) { return t.whats; })[0] || validos[0];
-          window.open('https://wa.me/' + numeroWhatsapp(alvo.numero), '_blank', 'noopener');
+
+        if (!item.tocado) {
+          item.whats = pareceCelular(item.numero);
+          aoPintar();
+          contarNumeros();
+        }
+
+        abrirEscolha({
+          titulo: telefoneBonito(item.numero),
+          valor: item.whats ? 'sim' : 'nao',
+          opcoes: [
+            {
+              valor: 'sim', rotulo: 'Tem WhatsApp',
+              detalhe: pareceCelular(item.numero)
+                ? 'é celular — foi o que o app achou' : 'entra nas cobranças por aqui'
+            },
+            {
+              valor: 'nao', rotulo: 'Não tem WhatsApp',
+              detalhe: pareceCelular(item.numero)
+                ? 'o ícone verde some' : 'é fixo — foi o que o app achou'
+            }
+          ],
+          acao: {
+            rotulo: 'Abrir a conversa para testar',
+            aoTocar: function () {
+              window.open('https://wa.me/' + numeroWhatsapp(item.numero), '_blank', 'noopener');
+            }
+          }
+        }, function (escolhido) {
+          if (escolhido == null) return;
+          item.whats = escolhido === 'sim';
+          item.tocado = true;
+          aoPintar();
+          contarNumeros();
         });
       }
 

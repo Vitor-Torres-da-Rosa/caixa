@@ -1,10 +1,13 @@
-const VERSAO = '3.1.2';
+const VERSAO = '3.2.0';
 const CACHE = 'caixa-v' + VERSAO;
 
 const ESSENCIAIS = [
   './',
   './index.html',
   './config.js',
+  './fundo.webp',
+  './abertura.webp',
+  './selo.webp',
   './manifest.webmanifest',
   './icon.svg'
 ];

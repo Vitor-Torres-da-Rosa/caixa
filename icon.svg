@@ -1,5 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="112" fill="#12232E"/>
-  <rect x="150" y="272" width="82" height="120" rx="18" fill="#B03A2E"/>
-  <rect x="280" y="152" width="82" height="240" rx="18" fill="#E9B44C"/>
+  <defs>
+    <linearGradient id="ouro" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7E2A8"/>
+      <stop offset="0.45" stop-color="#E9B44C"/>
+      <stop offset="1" stop-color="#B8862F"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#08080A"/>
+  <g fill="none" stroke="url(#ouro)" stroke-width="26" stroke-linejoin="round">
+    <rect x="140" y="186" width="140" height="140" rx="30" transform="rotate(45 210 256)"/>
+    <rect x="232" y="186" width="140" height="140" rx="30" transform="rotate(45 302 256)"/>
+  </g>
+  <circle cx="256" cy="256" r="17" fill="url(#ouro)"/>
 </svg>

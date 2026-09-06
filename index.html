@@ -1341,13 +1341,23 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.6.1';
+  var VERSAO = '3.6.2';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.6.2',
+      data: '2026-09-06',
+      itens: [
+        'Editar um pagamento agora refaz o combinado: mudou o valor recebido, a ponta das parcelas se ajusta sozinha.',
+        'Excluir um pagamento também reajusta as parcelas para bater com o que o cliente volta a dever.',
+        'Ao editar, dá para trocar a qual parcela aquele pagamento se refere.',
+        'Na aba Parcelas apareceu "Acertar as parcelas" quando a soma em aberto não bate com o que falta receber.'
+      ]
+    },
     {
       versao: '3.6.1',
       data: '2026-09-06',
@@ -4613,6 +4623,55 @@
     return quitadas;
   }
 
+  function renumerarCliente(clienteId) {
+    var porPlano = {};
+    parcelasDoCliente(clienteId).forEach(function (p) {
+      var chave = p.servicoId || '';
+      (porPlano[chave] = porPlano[chave] || []).push(p);
+    });
+    Object.keys(porPlano).forEach(function (chave) { renumerarPlano(porPlano[chave]); });
+  }
+
+  // Depois de mexer em dinheiro, a soma das parcelas em aberto tem que
+  // bater com o que o cliente ainda deve. Aqui a ponta do combinado é
+  // acertada: o que sobrou é cortado do fim, o que faltou vira parcela
+  // nova. Vale para pagamento novo, editado ou excluído — e conserta
+  // sozinho um combinado que já estava fora de conta.
+  function acertarParcelas(clienteId, parcelaBase) {
+    var abertas = parcelasDoCliente(clienteId).filter(function (p) { return !parcelaPaga(p); });
+    var soma = abertas.reduce(function (s, p) { return s + p.valor; }, 0);
+    var restante = Math.max(resumoCliente(clienteId).restante, 0);
+    var diferenca = restante - soma;
+    if (diferenca === 0) { renumerarCliente(clienteId); return; }
+
+    if (diferenca < 0) {
+      var cortar = -diferenca;
+      var fora = {};
+      for (var i = abertas.length - 1; i >= 0 && cortar > 0; i--) {
+        var p = abertas[i];
+        if (p.valor <= cortar) {
+          cortar -= p.valor;
+          fora[p.id] = true;
+          marcarExcluido('parcelas', p.id);
+        } else {
+          p.valor -= cortar;
+          cortar = 0;
+        }
+      }
+      if (Object.keys(fora).length) {
+        estado.parcelas = estado.parcelas.filter(function (p) { return !fora[p.id]; });
+      }
+      renumerarCliente(clienteId);
+      return;
+    }
+
+    // Faltou: acrescenta no fim do combinado da parcela de referência.
+    var modelo = parcelaBase && achar(estado.parcelas, parcelaBase.id) ? parcelaBase
+      : (abertas[abertas.length - 1] || parcelasDoCliente(clienteId)[0]);
+    if (modelo) empurrarFalta(modelo, diferenca);
+    renumerarCliente(clienteId);
+  }
+
   // O último pagamento lançado nesta parcela, para abrir a ficha dele.
   function pagamentoDaParcela(p) {
     var achado = '';
@@ -5411,7 +5470,32 @@
         acoes.appendChild(botao('btn btn-ouro', '+ Nova venda ou serviço', function () { abrirFolhaServico(id, null); }));
       } else if (abaFicha === 'parcelas') {
         acoes.appendChild(botao('btn btn-ouro', '+ Combinar parcelas', function () { abrirFolhaParcelamento(id, ''); }));
-        var emAberto = parcelasDoCliente(id).filter(function (p) { return !parcelaPaga(p); });
+
+        // Se a soma das parcelas em aberto não bate com o que falta receber,
+        // oferece o acerto em vez de deixar a conta torta em silêncio.
+        var abertasAgora = parcelasDoCliente(id).filter(function (p) { return !parcelaPaga(p); });
+        var somaAbertas = abertasAgora.reduce(function (s, p) { return s + p.valor; }, 0);
+        var desencontro = Math.max(r.restante, 0) - somaAbertas;
+        if (abertasAgora.length && desencontro !== 0) {
+          var bAcertar = botao('btn btn-fantasma',
+            'Acertar as parcelas (' + (desencontro > 0 ? 'faltam ' : 'sobram ') +
+            emReais(Math.abs(desencontro)) + ')', function () {
+            perguntar({
+              titulo: 'Acertar o combinado?',
+              texto: 'As parcelas em aberto somam ' + emReais(somaAbertas) + ', mas o cliente ainda deve ' +
+                emReais(Math.max(r.restante, 0)) + '. O app ajusta a ponta do combinado para as duas contas baterem.',
+              ok: 'Acertar', icone: 'alvo'
+            }, function () {
+              acertarParcelas(id, null);
+              salvar();
+              montarFichaCliente(id);
+              avisar('Parcelas acertadas.');
+            });
+          });
+          acoes.appendChild(bAcertar);
+        }
+
+        var emAberto = abertasAgora;
         if (emAberto.length) {
           acoes.appendChild(botao('btn btn-perigo', 'Apagar as ' + emAberto.length + ' parcelas em aberto', function () {
             perguntar({
@@ -5984,6 +6068,7 @@
   function abrirFolhaPagamento(clienteId, pagamentoId, parcelaId) {
     var existente = pagamentoId ? achar(estado.pagamentos, pagamentoId) : null;
     var parcela = parcelaId ? achar(estado.parcelas, parcelaId) : null;
+    if (!parcela && existente && existente.parcelaId) parcela = achar(estado.parcelas, existente.parcelaId);
     var r = resumoCliente(clienteId);
     var servicos = servicosDoCliente(clienteId);
     var lancarNoCaixa = !existente;
@@ -6012,7 +6097,7 @@
         }));
 
       var campoParcela = null;
-      if (!existente && abertas.length) {
+      if (abertas.length) {
         campoParcela = entradaSelecao(opcoesParcela, parcela ? parcela.id : '', 'Equivale a qual parcela');
         forma.appendChild(campo('Equivale a qual parcela', campoParcela));
       }
@@ -6048,7 +6133,6 @@
       }
 
       function parcelaAtual() {
-        if (existente) return null;
         var id = campoParcela ? campoParcela.value : (parcela ? parcela.id : '');
         return id ? achar(estado.parcelas, id) : null;
       }
@@ -6067,6 +6151,7 @@
 
       function pintarAtalhos() {
         caixaAtalhos.textContent = '';
+        if (existente) return;
         var p = parcelaAtual();
         if (!p) {
           if (!existente && r.restante > 0) {
@@ -6205,9 +6290,21 @@
         var cliente = achar(estado.clientes, clienteId);
 
         if (existente) {
+          var antiga = existente.parcelaId ? achar(estado.parcelas, existente.parcelaId) : null;
+          var nova = campoParcela ? achar(estado.parcelas, campoParcela.value) : antiga;
+
+          if (antiga && (!nova || nova.id !== antiga.id)) antiga.quitadaEm = '';
+          existente.parcelaId = nova ? nova.id : '';
+          if (nova) nova.quitadaEm = campoData.value;
+
           existente.valor = valor;
           existente.data = campoData.value;
           existente.servicoId = campoServico.value;
+          if (existente.lancamentoId) {
+            var lanc = achar(estado.lancamentos, existente.lancamentoId);
+            if (lanc) { lanc.valor = valor; lanc.data = campoData.value; }
+          }
+          acertarParcelas(clienteId, nova);
         } else {
           var alvo = parcelaAtual();
           var extra = acrescimos();
@@ -6263,6 +6360,7 @@
             if (falta > 0) empurrarFalta(alvo, falta);
             else if (sobra > 0) abaterSobra(alvo, sobra);
           }
+          acertarParcelas(clienteId, alvo);
         }
 
         salvar();
@@ -6274,8 +6372,8 @@
         acoes.appendChild(botao('btn btn-perigo', 'Excluir pagamento', function () {
           perguntar({
             titulo: 'Excluir este pagamento?',
-            texto: 'O lançamento de entrada criado junto com ele também sai, e a parcela volta a ficar em aberto. ' +
-              'As parcelas que nasceram do que faltou continuam onde estão — apague na mão se não quiser.',
+            texto: 'O lançamento de entrada criado junto com ele também sai, a parcela volta a ficar em aberto ' +
+              'e o combinado é reajustado para bater com o que o cliente passa a dever.',
             ok: 'Excluir pagamento', tom: 'perigo'
           }, function () {
             if (existente.lancamentoId) {
@@ -6288,6 +6386,7 @@
               if (p.pagamentoId === existente.id) p.pagamentoId = '';
               if (p.id === existente.parcelaId) p.quitadaEm = '';
             });
+            acertarParcelas(clienteId, null);
             salvar();
             voltarNavegacao();
             avisar('Pagamento excluído.');

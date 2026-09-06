@@ -275,9 +275,9 @@
   .segmentos::-webkit-scrollbar { display: none; }
   .segmentos button {
     flex: 1 0 auto;
-    padding: 8px 14px;
+    padding: 8px 12px;
     border-radius: 999px;
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--suave);
     white-space: nowrap;
@@ -312,7 +312,8 @@
     margin-bottom: 12px;
   }
   .busca input { flex: 1; border: 0; background: none; outline: none; padding: 13px 0; font-size: 14.5px; }
-  .busca .lupa { color: var(--suave); font-size: 17px; }
+  .busca .lupa { color: var(--suave); display: grid; place-items: center; flex: 0 0 auto; }
+  .busca .lupa svg { width: 18px; height: 18px; }
 
   /* ---------- Navegação ---------- */
 
@@ -2722,6 +2723,7 @@
     alvo: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zM12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z',
     maleta: 'M4 8.5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zM9 8.5v-2a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6.5v2M3 13h18',
     mais: 'M12 5v14M5 12h14',
+    lupa: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.2 16.2 21 21',
     lixo: 'M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7'
   };
 
@@ -4380,7 +4382,9 @@
     tela.appendChild(cabecalho('Transações', null, true));
 
     var busca = no('div', 'busca');
-    busca.appendChild(no('span', 'lupa', '⌕'));
+    var lupa = no('span', 'lupa');
+    lupa.appendChild(icone('lupa'));
+    busca.appendChild(lupa);
     var campo = no('input');
     campo.type = 'search';
     campo.placeholder = 'Buscar por descrição ou categoria';

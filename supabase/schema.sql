@@ -57,6 +57,14 @@ create table if not exists public.perfis (
   rendimento_anual      numeric(5,2) not null default 8 check (rendimento_anual between 0 and 60),
   orcamento_geral       bigint      not null default 0  check (orcamento_geral >= 0),
   objetivos             text[]      not null default '{}',
+  inflacao_anual        numeric(5,2) not null default 4 check (inflacao_anual between 0 and 40),
+  retirada_anual        numeric(5,2) not null default 4 check (retirada_anual between 0 and 20),
+  meta_patrimonio       bigint      not null default 0  check (meta_patrimonio >= 0),
+  conta_aposentadoria   text,
+  reserva_ligada        boolean     not null default true,
+  reserva_conta         text,
+  reserva_manual        bigint      not null default 0  check (reserva_manual >= 0),
+  tipos_registro        text[]      not null default '{}',
   criado_em             timestamptz not null default now(),
   atualizado_em         timestamptz not null default now()
 );
@@ -138,6 +146,7 @@ create table if not exists public.metas (
   nome          text        not null check (length(nome) between 1 and 50),
   alvo          bigint      not null check (alvo > 0),
   guardado      bigint      not null default 0 check (guardado >= 0),
+  conta_id      text        references public.contas (id) on delete set null,
   prazo         date,
   criado_em     timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
@@ -170,6 +179,7 @@ create table if not exists public.clientes (
   nome               text        not null check (length(nome) between 1 and 60),
   telefone           text        not null default '',
   obs                text        not null default '',
+  whatsapp           boolean     not null default true,
   proximo_pagamento  date,
   criado_em          timestamptz not null default now(),
   atualizado_em      timestamptz not null default now(),
@@ -181,6 +191,7 @@ create table if not exists public.servicos (
   user_id       uuid        not null default auth.uid() references auth.users (id) on delete cascade,
   cliente_id    text        not null references public.clientes (id) on delete cascade,
   nome          text        not null check (length(nome) between 1 and 60),
+  tipo          text        not null default 'Serviço',
   valor         bigint      not null check (valor > 0),
   data          date        not null,
   obs           text        not null default '',
@@ -202,6 +213,22 @@ create table if not exists public.pagamentos (
   excluido_em   timestamptz
 );
 
+-- Parcelas combinadas com o cliente: o que vence, quando e quanto.
+create table if not exists public.parcelas (
+  id            text        primary key,
+  user_id       uuid        not null default auth.uid() references auth.users (id) on delete cascade,
+  cliente_id    text        not null references public.clientes (id) on delete cascade,
+  servico_id    text        references public.servicos (id) on delete set null,
+  pagamento_id  text        references public.pagamentos (id) on delete set null,
+  numero        smallint    not null check (numero >= 1),
+  total         smallint    not null check (total >= 1),
+  valor         bigint      not null check (valor > 0),
+  vencimento    date        not null,
+  criado_em     timestamptz not null default now(),
+  atualizado_em timestamptz not null default now(),
+  excluido_em   timestamptz
+);
+
 -- ------------------------------------------------------------
 -- Índices
 -- ------------------------------------------------------------
@@ -216,6 +243,7 @@ create index if not exists idx_metas_user             on public.metas (user_id, 
 create index if not exists idx_clientes_user          on public.clientes (user_id, atualizado_em);
 create index if not exists idx_servicos_user          on public.servicos (user_id, cliente_id);
 create index if not exists idx_pagamentos_user        on public.pagamentos (user_id, cliente_id);
+create index if not exists idx_parcelas_user         on public.parcelas (user_id, cliente_id, vencimento);
 
 -- ------------------------------------------------------------
 -- Row Level Security
@@ -229,7 +257,7 @@ declare
   t text;
   tabelas text[] := array[
     'contas', 'lancamentos', 'ativos', 'ativo_historico', 'metas',
-    'orcamentos', 'categorias_extras', 'clientes', 'servicos', 'pagamentos'
+    'orcamentos', 'categorias_extras', 'clientes', 'servicos', 'pagamentos', 'parcelas'
   ];
 begin
   -- Perfil: a chave é a própria id do usuário.
@@ -267,7 +295,7 @@ declare
   t text;
   tabelas text[] := array[
     'perfis', 'contas', 'lancamentos', 'ativos', 'ativo_historico', 'metas',
-    'orcamentos', 'clientes', 'servicos', 'pagamentos'
+    'orcamentos', 'clientes', 'servicos', 'pagamentos', 'parcelas'
   ];
 begin
   foreach t in array tabelas loop

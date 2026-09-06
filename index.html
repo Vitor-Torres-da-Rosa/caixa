@@ -408,7 +408,6 @@
     font-size: 15px;
   }
   .entrada:focus { border-color: var(--ouro); }
-  select.entrada { background-image: linear-gradient(45deg, transparent 50%, var(--suave) 50%), linear-gradient(135deg, var(--suave) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 34px; }
   input[type="date"].entrada { min-height: 47px; }
   ::placeholder { color: var(--fraco); }
 
@@ -524,6 +523,118 @@
   }
   .dialogo .btn-discreto { color: var(--suave); font-weight: 600; padding: 12px; }
   .dialogo .btn-discreto:active { background: var(--cartao-2); }
+
+  .linha-dupla-campo { display: flex; align-items: center; gap: 8px; }
+  .linha-dupla-campo > .entrada { flex: 1 1 auto; min-width: 0; }
+  .linha-dupla-campo > .linha-acao {
+    border: 1px solid var(--borda);
+    background: rgba(14,12,10,.62);
+  }
+
+  /* ---------- Seletor próprio ---------- */
+
+  .selecao {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+  }
+  .selecao .rotulo-valor { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .selecao .seta { flex: 0 0 auto; color: var(--suave); font-size: 11px; }
+  .selecao[aria-expanded="true"] { border-color: var(--ouro); }
+
+  .escolha-caixa {
+    width: 100%;
+    max-width: 380px;
+    max-height: 74vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 22px;
+    overflow: hidden;
+    background: linear-gradient(165deg, rgba(28,23,15,.97) 0%, rgba(8,8,10,.98) 55%);
+    border: 1px solid var(--borda-viva);
+    box-shadow: 0 24px 60px rgba(0,0,0,.7);
+    transform: scale(.94);
+    transition: transform .18s cubic-bezier(.32,.72,0,1);
+  }
+  .dialogo-fundo.aberta .escolha-caixa { transform: scale(1); }
+  .escolha-titulo {
+    padding: 18px 20px 12px;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    border-bottom: 1px solid var(--borda);
+  }
+  .escolha-lista { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .escolha-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 20px;
+    text-align: left;
+    font-size: 15px;
+    border-top: 1px solid rgba(198,158,78,.12);
+  }
+  .escolha-item:first-child { border-top: 0; }
+  .escolha-item:active { background: var(--cartao-2); }
+  .escolha-item .marca {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(198,158,78,.4);
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    color: #1A1408;
+  }
+  .escolha-item[aria-selected="true"] .marca { background: var(--dourado); border-color: transparent; }
+  .escolha-item[aria-selected="true"] { color: var(--ouro); font-weight: 600; }
+  .escolha-item .txt { flex: 1 1 auto; min-width: 0; }
+  .escolha-item .extra { color: var(--suave); font-size: 13px; font-weight: 400; }
+  .escolha-rodape { padding: 12px 16px calc(14px + var(--baixo)); border-top: 1px solid var(--borda); }
+
+  /* ---------- WhatsApp e atrasos ---------- */
+
+  .btn-whats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    padding: 14px;
+    border-radius: 13px;
+    background: rgba(37,211,102,.12);
+    border: 1px solid rgba(37,211,102,.45);
+    color: #25D366;
+    font-size: 14.5px;
+    font-weight: 700;
+  }
+  .btn-whats:active { background: rgba(37,211,102,.2); }
+  .btn-whats svg { width: 20px; height: 20px; }
+
+  .linha.atrasada .linha-titulo { color: var(--vermelho); }
+  .aviso-atraso {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 13px;
+    background: rgba(255,107,107,.10);
+    border: 1px solid rgba(255,107,107,.32);
+    font-size: 13px;
+    color: var(--texto);
+    margin-bottom: 12px;
+  }
+  .aviso-atraso .n { color: var(--vermelho); font-weight: 700; }
+
+  .parcela-linha { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(198,158,78,.14); font-size: 13.5px; }
+  .parcela-linha:last-child { border-bottom: 0; }
+  .parcela-linha .q { color: var(--suave); }
+  .parcela-linha .v { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .parcela-linha.paga .v { color: var(--verde); }
+  .parcela-linha.vencida .q, .parcela-linha.vencida .v { color: var(--vermelho); }
 
   /* ---------- Linha com ação ao lado ---------- */
 
@@ -1166,6 +1277,14 @@
   </div>
 </div>
 
+<div class="dialogo-fundo" id="escolhaFundo" hidden>
+  <div class="escolha-caixa" role="dialog" aria-modal="true" aria-labelledby="escolhaTitulo">
+    <div class="escolha-titulo" id="escolhaTitulo"></div>
+    <div class="escolha-lista" id="escolhaLista"></div>
+    <div class="escolha-rodape" id="escolhaRodape"></div>
+  </div>
+</div>
+
 <div class="toque" id="toque" role="status" aria-live="polite"></div>
 <input type="file" id="arquivoRestaurar" accept="application/json,.json" class="oculto">
 
@@ -1174,13 +1293,30 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.3.0';
+  var VERSAO = '3.4.0';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.4.0',
+      data: '2026-09-06',
+      itens: [
+        'Correção importante: editar algo enquanto a sincronização rodava fazia a alteração se perder. Agora a volta do servidor espera você terminar.',
+        'Aposentadoria com conta ligada, inflação, meta de patrimônio, taxa real, juros, multiplicador e renda passiva, tudo recalculando enquanto você digita.',
+        'Metas e reserva de emergência podem apontar para uma conta; a reserva mostra o ideal, o que você tem e o que falta.',
+        'A reserva pode ser desligada do Planejar e religada em Mais → Preferências.',
+        'Empreendedor: cada registro tem tipo (Venda, Serviço, Outros ou os seus), com lápis para renomear e excluir.',
+        'Previsão de pagamento em parcelas, com acréscimo em % ou R$ e resumo do que vai ser cobrado antes de confirmar.',
+        'Clientes atrasados aparecem em vermelho, com o resumo do que venceu e um atalho de WhatsApp que abre a conversa com a mensagem já escrita.',
+        'Telefone com (DDD) e traço só de enfeite: por baixo continua só o número.',
+        'Botão de baixar backup na aba Empreendedor.',
+        'Transações agora mostram o mês, os últimos 3 meses ou o último ano.',
+        'Os menus de escolha ganharam a cara do app, no lugar do menu do navegador.'
+      ]
+    },
     {
       versao: '3.3.0',
       data: '2026-09-06',
@@ -1350,6 +1486,13 @@
 
   function pct(parte, total) { return total > 0 ? (parte / total) * 100 : 0; }
 
+  // Número solto na escrita daqui: vírgula no lugar do ponto, sem zero à toa.
+  function numeroBr(v) {
+    var x = Number(v);
+    if (!isFinite(x)) return '0';
+    return String(Math.round(x * 100) / 100).replace('.', ',');
+  }
+
   function comSinal(centavos) { return (centavos > 0 ? '+' : centavos < 0 ? '−' : '') + emReais(Math.abs(centavos)); }
 
   // ---------- Datas em texto AAAA-MM-DD, sem fuso ----------
@@ -1368,6 +1511,13 @@
   }
 
   function comoData(texto) { var p = partes(texto); return new Date(p.ano, p.mes, p.dia); }
+
+  function somaMeses(texto, n) {
+    var p = partes(texto);
+    var alvo = new Date(p.ano, p.mes + n, 1);
+    var ultimo = new Date(alvo.getFullYear(), alvo.getMonth() + 1, 0).getDate();
+    return deData(new Date(alvo.getFullYear(), alvo.getMonth(), Math.min(p.dia, ultimo)));
+  }
 
   function somaDias(texto, n) {
     var p = partes(texto);
@@ -1404,18 +1554,40 @@
   function estadoPadrao() {
     return {
       versao: 3,
-      perfil: { nome: '', reservaMeses: 6, idadeAtual: 30, idadeAposentadoria: 60, aporteMensal: 0, rendimentoAnual: 8, objetivos: [] },
+      perfil: {
+        nome: '', reservaMeses: 6, idadeAtual: 30, idadeAposentadoria: 60,
+        aporteMensal: 0, rendimentoAnual: 8, objetivos: [],
+        inflacaoAnual: 4,        // % ao ano, para a taxa real
+        metaPatrimonio: 0,       // quanto você quer ter juntado
+        retiradaAnual: 4,        // % ao ano de retirada na aposentadoria
+        contaAposentadoria: '',  // conta que já guarda esse dinheiro
+        reservaLigada: true,
+        reservaConta: '',
+        reservaManual: 0
+      },
       contas: [],
       lancamentos: [],
       ativos: [],
       metas: [],
       orcamentos: { geral: 0, categorias: {} },
       categoriasExtras: { saida: [], entrada: [] },
+      tiposRegistro: [],
       clientes: [],
       servicos: [],
       pagamentos: [],
+      parcelas: [],
       excluidos: []
     };
+  }
+
+  // Tipos de registro do Empreendedor: os três de fábrica mais os seus.
+  var TIPOS_REGISTRO_BASE = ['Venda', 'Serviço', 'Outros'];
+
+  function tiposDeRegistro() {
+    var extras = (estado && estado.tiposRegistro) || [];
+    var lista = TIPOS_REGISTRO_BASE.slice();
+    extras.forEach(function (t) { if (lista.indexOf(t) < 0) lista.splice(lista.length - 1, 0, t); });
+    return lista;
   }
 
   // Categorias fixas mais as que a pessoa criou.
@@ -1427,6 +1599,43 @@
   }
 
   function novoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+  // ---------- Telefone ----------
+  //
+  // Guardamos só os números. Os parênteses, o espaço e o traço são enfeite
+  // que aparece na tela; ninguém digita nem copia eles.
+
+  function soDigitos(v) { return String(v || '').replace(/\D/g, ''); }
+
+  function telefoneBonito(v) {
+    var d = soDigitos(v).slice(0, 11);
+    if (!d) return '';
+    if (d.length <= 2) return '(' + d;
+    var ddd = d.slice(0, 2);
+    var resto = d.slice(2);
+    if (resto.length <= 4) return '(' + ddd + ') ' + resto;
+    var corte = resto.length > 8 ? 5 : 4;
+    return '(' + ddd + ') ' + resto.slice(0, corte) + '-' + resto.slice(corte);
+  }
+
+  // O WhatsApp quer o número com o código do país e só dígitos.
+  function numeroWhatsapp(v) {
+    var d = soDigitos(v);
+    if (d.length === 10 || d.length === 11) d = '55' + d;
+    return d.length >= 12 && d.length <= 13 ? d : '';
+  }
+
+  function temWhatsapp(cliente) {
+    return cliente.whatsapp !== false && !!numeroWhatsapp(cliente.telefone);
+  }
+
+  function abrirWhatsapp(cliente, mensagem) {
+    var numero = numeroWhatsapp(cliente.telefone);
+    if (!numero) { avisar('Este cliente não tem um celular válido.'); return; }
+    // O texto vai pronto na caixa de conversa. Quem envia é a pessoa.
+    var url = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(mensagem);
+    window.open(url, '_blank', 'noopener');
+  }
 
   // O Postgres devolve bigint como texto em algumas configurações, então
   // aceitamos número ou texto numérico antes de arredondar.
@@ -1461,6 +1670,23 @@
       if (Array.isArray(bruto.perfil.objetivos)) {
         limpo.perfil.objetivos = bruto.perfil.objetivos.filter(function (o) { return typeof o === 'string'; }).slice(0, 10);
       }
+      var infl = Number(bruto.perfil.inflacaoAnual);
+      limpo.perfil.inflacaoAnual = isFinite(infl) ? Math.min(Math.max(infl, 0), 40) : 4;
+      var ret = Number(bruto.perfil.retiradaAnual);
+      limpo.perfil.retiradaAnual = isFinite(ret) && ret > 0 ? Math.min(ret, 20) : 4;
+      limpo.perfil.metaPatrimonio = Math.max(inteiro(bruto.perfil.metaPatrimonio), 0);
+      limpo.perfil.contaAposentadoria = texto(bruto.perfil.contaAposentadoria);
+      limpo.perfil.reservaLigada = bruto.perfil.reservaLigada !== false;
+      limpo.perfil.reservaConta = texto(bruto.perfil.reservaConta);
+      limpo.perfil.reservaManual = Math.max(inteiro(bruto.perfil.reservaManual), 0);
+    }
+
+    if (Array.isArray(bruto.tiposRegistro)) {
+      limpo.tiposRegistro = bruto.tiposRegistro
+        .filter(function (t) { return typeof t === 'string' && t.trim(); })
+        .map(function (t) { return t.trim().slice(0, 30); })
+        .filter(function (t) { return TIPOS_REGISTRO_BASE.indexOf(t) < 0; })
+        .slice(0, 30);
     }
 
     if (bruto.categoriasExtras && typeof bruto.categoriasExtras === 'object') {
@@ -1484,6 +1710,7 @@
           telefone: texto(c.telefone).slice(0, 30),
           obs: texto(c.obs).slice(0, 200),
           proximoPagamento: soData(c.proximoPagamento),
+          whatsapp: c.whatsapp !== false,
           criadoEm: inteiro(c.criadoEm) || Date.now()
         };
       });
@@ -1498,10 +1725,30 @@
           id: s.id,
           clienteId: s.clienteId,
           nome: texto(s.nome).slice(0, 60) || 'Serviço',
+          tipo: texto(s.tipo).slice(0, 30) || 'Serviço',
           valor: inteiro(s.valor),
           data: soData(s.data),
           obs: texto(s.obs).slice(0, 200),
           criadoEm: inteiro(s.criadoEm) || Date.now()
+        };
+      });
+    }
+
+    if (Array.isArray(bruto.parcelas)) {
+      limpo.parcelas = bruto.parcelas.filter(function (p) {
+        return p && typeof p === 'object' && typeof p.id === 'string' &&
+          typeof p.clienteId === 'string' && inteiro(p.valor) > 0 && soData(p.vencimento);
+      }).map(function (p) {
+        return {
+          id: p.id,
+          clienteId: p.clienteId,
+          servicoId: texto(p.servicoId),
+          numero: Math.max(inteiro(p.numero), 1),
+          total: Math.max(inteiro(p.total), 1),
+          valor: inteiro(p.valor),
+          vencimento: soData(p.vencimento),
+          pagamentoId: texto(p.pagamentoId),
+          criadoEm: inteiro(p.criadoEm) || Date.now()
         };
       });
     }
@@ -1591,6 +1838,7 @@
           nome: texto(m.nome).slice(0, 50),
           alvo: inteiro(m.alvo),
           guardado: Math.max(inteiro(m.guardado), 0),
+          contaId: texto(m.contaId),
           prazo: soData(m.prazo)
         };
       });
@@ -2142,7 +2390,7 @@
 
   // Ordem importa: uma tabela só entra depois daquela de quem ela depende.
   var TABELAS_SINCRONIA = ['contas', 'lancamentos', 'ativos', 'ativo_historico',
-                           'clientes', 'servicos', 'pagamentos', 'metas'];
+                           'clientes', 'servicos', 'pagamentos', 'parcelas', 'metas'];
 
   function linhasDoEstado(uid) {
     var historico = [];
@@ -2170,13 +2418,22 @@
       clientes: estado.clientes.map(function (c) {
         return {
           id: c.id, user_id: uid, nome: c.nome, telefone: c.telefone, obs: c.obs,
+          whatsapp: c.whatsapp !== false,
           proximo_pagamento: ouNulo(c.proximoPagamento)
         };
       }),
       servicos: estado.servicos.map(function (s) {
         return {
           id: s.id, user_id: uid, cliente_id: s.clienteId, nome: s.nome,
+          tipo: s.tipo || 'Serviço',
           valor: s.valor, data: s.data, obs: s.obs
+        };
+      }),
+      parcelas: estado.parcelas.map(function (p) {
+        return {
+          id: p.id, user_id: uid, cliente_id: p.clienteId, servico_id: ouNulo(p.servicoId),
+          pagamento_id: ouNulo(p.pagamentoId), numero: p.numero, total: p.total,
+          valor: p.valor, vencimento: p.vencimento
         };
       }),
       pagamentos: estado.pagamentos.map(function (p) {
@@ -2186,7 +2443,10 @@
         };
       }),
       metas: estado.metas.map(function (m) {
-        return { id: m.id, user_id: uid, nome: m.nome, alvo: m.alvo, guardado: m.guardado, prazo: ouNulo(m.prazo) };
+        return {
+          id: m.id, user_id: uid, nome: m.nome, alvo: m.alvo, guardado: m.guardado,
+          conta_id: ouNulo(m.contaId), prazo: ouNulo(m.prazo)
+        };
       })
     };
   }
@@ -2201,6 +2461,14 @@
       idade_aposentadoria: p.idadeAposentadoria,
       aporte_mensal: p.aporteMensal,
       rendimento_anual: p.rendimentoAnual,
+      inflacao_anual: p.inflacaoAnual,
+      retirada_anual: p.retiradaAnual,
+      meta_patrimonio: p.metaPatrimonio,
+      conta_aposentadoria: ouNulo(p.contaAposentadoria),
+      reserva_ligada: p.reservaLigada !== false,
+      reserva_conta: ouNulo(p.reservaConta),
+      reserva_manual: p.reservaManual,
+      tipos_registro: estado.tiposRegistro || [],
       orcamento_geral: estado.orcamentos.geral,
       objetivos: p.objetivos || []
     };
@@ -2304,6 +2572,14 @@
       novo.perfil.idadeAposentadoria = perfil.idade_aposentadoria || 60;
       novo.perfil.aporteMensal = perfil.aporte_mensal || 0;
       novo.perfil.rendimentoAnual = Number(perfil.rendimento_anual) || 8;
+      novo.perfil.inflacaoAnual = perfil.inflacao_anual == null ? 4 : Number(perfil.inflacao_anual);
+      novo.perfil.retiradaAnual = perfil.retirada_anual == null ? 4 : Number(perfil.retirada_anual);
+      novo.perfil.metaPatrimonio = perfil.meta_patrimonio || 0;
+      novo.perfil.contaAposentadoria = perfil.conta_aposentadoria || '';
+      novo.perfil.reservaLigada = perfil.reserva_ligada !== false;
+      novo.perfil.reservaConta = perfil.reserva_conta || '';
+      novo.perfil.reservaManual = perfil.reserva_manual || 0;
+      novo.tiposRegistro = perfil.tipos_registro || [];
       novo.perfil.objetivos = perfil.objetivos || [];
       novo.orcamentos.geral = perfil.orcamento_geral || 0;
     }
@@ -2334,12 +2610,16 @@
     });
 
     novo.metas = (r.metas || []).map(function (m) {
-      return { id: m.id, nome: m.nome, alvo: m.alvo, guardado: m.guardado, prazo: m.prazo || '' };
+      return {
+        id: m.id, nome: m.nome, alvo: m.alvo, guardado: m.guardado,
+        contaId: m.conta_id || '', prazo: m.prazo || ''
+      };
     });
 
     novo.clientes = (r.clientes || []).map(function (c) {
       return {
         id: c.id, nome: c.nome, telefone: c.telefone || '', obs: c.obs || '',
+        whatsapp: c.whatsapp !== false,
         proximoPagamento: c.proximo_pagamento || '',
         criadoEm: Date.parse(c.criado_em) || Date.now()
       };
@@ -2347,8 +2627,18 @@
 
     novo.servicos = (r.servicos || []).map(function (s) {
       return {
-        id: s.id, clienteId: s.cliente_id, nome: s.nome, valor: s.valor,
-        data: s.data, obs: s.obs || '', criadoEm: Date.parse(s.criado_em) || Date.now()
+        id: s.id, clienteId: s.cliente_id, nome: s.nome, tipo: s.tipo || 'Serviço',
+        valor: s.valor, data: s.data, obs: s.obs || '',
+        criadoEm: Date.parse(s.criado_em) || Date.now()
+      };
+    });
+
+    novo.parcelas = (r.parcelas || []).map(function (p) {
+      return {
+        id: p.id, clienteId: p.cliente_id, servicoId: p.servico_id || '',
+        pagamentoId: p.pagamento_id || '', numero: p.numero, total: p.total,
+        valor: p.valor, vencimento: soData(p.vencimento),
+        criadoEm: Date.parse(p.criado_em) || Date.now()
       };
     });
 
@@ -2378,21 +2668,33 @@
   var sincronizando = false;
   var tempoSincronia = null;
 
+  // Enquanto uma folha, uma pergunta ou um seletor está aberto, a pessoa
+  // está no meio de uma edição. Trocar o estado inteiro nessa hora joga
+  // fora o que ela acabou de digitar, então a volta do servidor espera.
+  function editorAberto() {
+    return folhaAberta || dialogoAberto || !!escolhaAtual;
+  }
+
   function sincronizar(silenciosa) {
     if (!NUVEM.ligada || !sessaoNuvem || !sessaoNuvem.usuario.id) return Promise.resolve(false);
     if (sincronizando) return Promise.resolve(false);
     sincronizando = true;
 
     return nuvemEnviar().then(function () {
-      return nuvemBaixar();
+      return editorAberto() ? null : nuvemBaixar();
     }).then(function (doServidor) {
+      if (!doServidor) {
+        sincronizando = false;
+        agendarSincronia();
+        return false;
+      }
       estado = doServidor;
-      return salvar();
-    }).then(function () {
-      sincronizando = false;
-      if (!silenciosa) avisar('Sincronizado com a nuvem.');
-      desenhar();
-      return true;
+      return salvar().then(function () {
+        sincronizando = false;
+        if (!silenciosa) avisar('Sincronizado com a nuvem.');
+        desenhar();
+        return true;
+      });
     }).catch(function (e) {
       sincronizando = false;
       if (!silenciosa) avisar('Não sincronizou: ' + e.message);
@@ -2507,6 +2809,77 @@
   }
 
   function patrimonio(ate) { return totalEmContas(ate) + totalInvestido(ate); }
+
+  // ---------- Aposentadoria ----------
+  //
+  // Juros compostos mês a mês, como na planilha. A taxa real desconta a
+  // inflação, para o número final valer em dinheiro de hoje.
+
+  function calculoAposentadoria() {
+    var p = estado.perfil;
+    var anos = Math.max(0, p.idadeAposentadoria - p.idadeAtual);
+    var meses = anos * 12;
+
+    var capital = p.contaAposentadoria ? Math.max(saldoConta(p.contaAposentadoria, null), 0) : 0;
+
+    var taxaAno = Math.max(p.rendimentoAnual || 0, 0) / 100;
+    var inflacaoAno = Math.max(p.inflacaoAnual || 0, 0) / 100;
+    // Taxa real de Fisher: o ganho acima da inflação.
+    var taxaRealAno = inflacaoAno > 0 ? (1 + taxaAno) / (1 + inflacaoAno) - 1 : taxaAno;
+    var taxaMes = Math.pow(1 + taxaAno, 1 / 12) - 1;
+    var taxaRealMes = taxaRealAno > -1 ? Math.pow(1 + taxaRealAno, 1 / 12) - 1 : 0;
+
+    function futuroCom(taxa) {
+      if (Math.abs(taxa) < 1e-12) return capital + p.aporteMensal * meses;
+      return capital * Math.pow(1 + taxa, meses) +
+        p.aporteMensal * ((Math.pow(1 + taxa, meses) - 1) / taxa);
+    }
+
+    var bruto = Math.round(futuroCom(taxaMes));
+    var real = Math.round(futuroCom(taxaRealMes));
+    var investido = capital + p.aporteMensal * meses;
+    var juros = bruto - investido;
+    var retirada = Math.max(p.retiradaAnual || 4, 0) / 100;
+
+    return {
+      anos: anos, meses: meses, capital: capital,
+      taxaAno: p.rendimentoAnual, inflacaoAno: p.inflacaoAnual,
+      taxaRealAno: taxaRealAno * 100,
+      taxaMes: taxaMes * 100,
+      bruto: bruto, real: real,
+      investido: investido, juros: juros,
+      multiplicador: investido > 0 ? bruto / investido : 0,
+      jurosPct: bruto > 0 ? (juros / bruto) * 100 : 0,
+      rendaPassiva: Math.round(bruto * retirada / 12),
+      meta: p.metaPatrimonio,
+      metaPct: p.metaPatrimonio > 0 ? (bruto / p.metaPatrimonio) * 100 : 0
+    };
+  }
+
+  // ---------- Reserva de emergência ----------
+
+  function calculoReserva() {
+    var p = estado.perfil;
+    var media = mediaDespesas(3);
+    var ideal = media * p.reservaMeses;
+    var naConta = p.reservaConta ? Math.max(saldoConta(p.reservaConta, null), 0) : 0;
+    var guardado = p.reservaConta ? naConta : (p.reservaManual > 0 ? p.reservaManual : Math.max(totalEmContas(null), 0));
+    return {
+      media: media, ideal: ideal, guardado: guardado, naConta: naConta,
+      falta: Math.max(ideal - guardado, 0),
+      manual: p.reservaManual,
+      origem: p.reservaConta ? 'conta' : (p.reservaManual > 0 ? 'manual' : 'contas')
+    };
+  }
+
+  // Quanto uma meta já tem guardado: a conta ligada manda, senão o valor digitado.
+  function guardadoDaMeta(m) {
+    if (m.contaId) {
+      var c = achar(estado.contas, m.contaId);
+      if (c) return Math.max(saldoConta(m.contaId, null), 0);
+    }
+    return Math.max(m.guardado || 0, 0);
+  }
 
   function lancamentosDoMes(ano, mes) {
     var pre = prefixoMes(ano, mes);
@@ -2866,6 +3239,21 @@
     extrato: 'M6 3.5h9L19.5 8v12.5a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1zM14.5 3.5V8h5M8.5 12.5h7M8.5 16h4',
     lixo: 'M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7'
   };
+
+  // O contorno do balão do WhatsApp, desenhado à mão.
+  function iconeWhatsapp() {
+    var svg = svgNo('svg', { viewBox: '0 0 24 24', fill: 'none' });
+    svg.setAttribute('aria-hidden', 'true');
+    svg.appendChild(svgNo('path', {
+      d: 'M3.5 20.5l1.3-4.6A8.2 8.2 0 1 1 8.2 19.2z',
+      stroke: 'currentColor', 'stroke-width': 1.7, 'stroke-linejoin': 'round', fill: 'none'
+    }));
+    svg.appendChild(svgNo('path', {
+      d: 'M9 8.4c.2-.5.4-.5.7-.5h.5c.2 0 .4 0 .6.5l.7 1.6c.1.3 0 .5-.1.6l-.4.5c-.1.2-.2.3 0 .6a6 6 0 0 0 2.4 2.2c.3.1.4 0 .6-.1l.5-.5c.2-.2.4-.2.6-.1l1.5.8c.3.2.4.4.4.6s-.2 1-.6 1.3c-.4.3-1 .5-1.7.3a9.3 9.3 0 0 1-5.8-5.5c-.2-.9-.1-1.6.1-2.3z',
+      fill: 'currentColor'
+    }));
+    return svg;
+  }
 
   function icone(nome, tamanho) {
     var svg = svgNo('svg', { viewBox: '0 0 24 24', fill: 'none' });
@@ -3752,6 +4140,7 @@
   var mesAtivo = { ano: agora.getFullYear(), mes: agora.getMonth() };
   var telaAtiva = 'inicio';
   var filtroTransacoes = 'todas';
+  var periodoTransacoes = 'mes';   // mes | tres | ano
   var buscaTransacoes = '';
   var abaInvestimentos = 'alocacao';
   var abaInicio = 'geral';
@@ -3841,6 +4230,7 @@
     var item = pilha.pop();
 
     if (item.tipo === 'dialogo') { concluirDialogo(); return; }
+    if (item.tipo === 'escolha') { concluirEscolha(); return; }
 
     if (item.tipo === 'folha') { fecharFolhaEfeito(); if (sessao) desenhar(); return; }
     if (item.tipo === 'relatorio') { fecharRelatorioEfeito(); return; }
@@ -3922,6 +4312,47 @@
       .sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
   }
 
+  function parcelasDoCliente(id) {
+    return estado.parcelas.filter(function (p) { return p.clienteId === id; })
+      .sort(function (a, b) {
+        if (a.vencimento !== b.vencimento) return a.vencimento < b.vencimento ? -1 : 1;
+        return a.numero - b.numero;
+      });
+  }
+
+  function parcelaPaga(p) {
+    return !!(p.pagamentoId && achar(estado.pagamentos, p.pagamentoId));
+  }
+
+  // O que já venceu e ainda não foi pago.
+  function atrasoDoCliente(id) {
+    var hoje = hojeTexto();
+    var vencidas = parcelasDoCliente(id).filter(function (p) {
+      return !parcelaPaga(p) && p.vencimento < hoje;
+    });
+    var total = vencidas.reduce(function (soma, p) { return soma + p.valor; }, 0);
+    return { vencidas: vencidas, total: total, desde: vencidas.length ? vencidas[0].vencimento : '' };
+  }
+
+  // A próxima parcela em aberto. Sem parcelas, cai na data solta do cadastro.
+  function proximoVencimento(id) {
+    var hoje = hojeTexto();
+    var abertas = parcelasDoCliente(id).filter(function (p) {
+      return !parcelaPaga(p) && p.vencimento >= hoje;
+    });
+    if (abertas.length) return abertas[0].vencimento;
+    var cliente = achar(estado.clientes, id);
+    return cliente && cliente.proximoPagamento ? cliente.proximoPagamento : '';
+  }
+
+  function clienteAtrasado(id) {
+    var a = atrasoDoCliente(id);
+    if (a.vencidas.length) return true;
+    var cliente = achar(estado.clientes, id);
+    return !!(cliente && cliente.proximoPagamento && cliente.proximoPagamento < hojeTexto() &&
+      resumoCliente(id).restante > 0);
+  }
+
   function resumoCliente(id) {
     var total = 0, pago = 0;
     estado.servicos.forEach(function (s) { if (s.clienteId === id) total += s.valor; });
@@ -3934,27 +4365,60 @@
     estado.servicos.forEach(function (s) { total += s.valor; });
     estado.pagamentos.forEach(function (p) { pago += p.valor; });
     var atrasados = 0;
-    var hoje = hojeTexto();
+    var emAtraso = 0;
     estado.clientes.forEach(function (c) {
-      var r = resumoCliente(c.id);
-      if (r.restante > 0 && c.proximoPagamento && c.proximoPagamento < hoje) atrasados += 1;
+      if (!clienteAtrasado(c.id)) return;
+      atrasados += 1;
+      emAtraso += atrasoDoCliente(c.id).total;
     });
-    return { total: total, pago: pago, restante: total - pago, atrasados: atrasados };
+    return {
+      total: total, pago: pago, restante: total - pago,
+      atrasados: atrasados, emAtraso: emAtraso
+    };
   }
 
   function situacaoCliente(cliente) {
     var r = resumoCliente(cliente.id);
-    if (r.total === 0) return { classe: 'aberto', texto: 'sem serviço' };
+    if (r.total === 0) return { classe: 'aberto', texto: 'sem registro' };
     if (r.restante <= 0) return { classe: 'quitado', texto: 'quitado' };
-    if (cliente.proximoPagamento && cliente.proximoPagamento < hojeTexto()) return { classe: 'atrasado', texto: 'atrasado' };
+    if (clienteAtrasado(cliente.id)) return { classe: 'atrasado', texto: 'atrasado' };
     return { classe: 'aberto', texto: 'em aberto' };
   }
 
   function proximoPagamentoGeral() {
     var datas = estado.clientes.filter(function (c) {
-      return c.proximoPagamento && resumoCliente(c.id).restante > 0;
-    }).map(function (c) { return c.proximoPagamento; }).sort();
+      return resumoCliente(c.id).restante > 0;
+    }).map(function (c) { return proximoVencimento(c.id); })
+      .filter(function (d) { return !!d; }).sort();
     return datas.length ? datas[0] : '';
+  }
+
+  // A conversa que vai pronta no WhatsApp. Quem envia é você.
+  function mensagemDeCobranca(cliente) {
+    var atraso = atrasoDoCliente(cliente.id);
+    var primeiro = String(cliente.nome || '').split(' ')[0];
+    var linhas = ['Oi, ' + primeiro + '! Tudo bem?'];
+
+    if (atraso.vencidas.length) {
+      linhas.push('');
+      linhas.push('Passando para lembrar do pagamento que ficou em aberto:');
+      atraso.vencidas.forEach(function (p) {
+        linhas.push('• ' + emReais(p.valor) + ' — venceu em ' + dataBr(p.vencimento) +
+          (p.total > 1 ? ' (parcela ' + p.numero + '/' + p.total + ')' : ''));
+      });
+      linhas.push('');
+      linhas.push('Total em aberto: ' + emReais(atraso.total) + '.');
+    } else {
+      var r = resumoCliente(cliente.id);
+      var proxima = proximoVencimento(cliente.id);
+      linhas.push('');
+      linhas.push('Passando para combinar o pagamento de ' + emReais(r.restante) +
+        (proxima ? ', previsto para ' + dataBr(proxima) : '') + '.');
+    }
+
+    linhas.push('');
+    linhas.push('Qualquer coisa é só me chamar. Obrigado!');
+    return linhas.join('\n');
   }
 
   // ---------- Tela: Início ----------
@@ -4129,7 +4593,7 @@
     }
     if (geral.atrasados) {
       var alerta = no('div', 'linha-nota vermelho',
-        geral.atrasados + ' cliente(s) com pagamento atrasado.');
+        geral.atrasados + ' cliente(s) em atraso, somando ' + emReais(geral.emAtraso) + '.');
       cResumo.appendChild(alerta);
     }
     tela.appendChild(cResumo);
@@ -4148,32 +4612,136 @@
       b.style.width = 'calc(100% - 32px)';
       cClientes.appendChild(b);
     } else {
+      // Quem está atrasado sobe para o topo.
       estado.clientes.slice().sort(function (a, b) {
+        var atA = clienteAtrasado(a.id) ? 1 : 0;
+        var atB = clienteAtrasado(b.id) ? 1 : 0;
+        if (atA !== atB) return atB - atA;
         return resumoCliente(b.id).restante - resumoCliente(a.id).restante;
       }).forEach(function (c) {
         var r = resumoCliente(c.id);
         var sit = situacaoCliente(c);
-        var linha = botao('linha', null, function () { abrirFichaCliente(c.id); });
+        var atrasado = sit.classe === 'atrasado';
+
+        var linha = no('div', 'linha linha-dupla' + (atrasado ? ' atrasada' : ''));
+        var alvo = botao('linha-alvo', null, function () {
+          if (atrasado) { abrirResumoAtraso(c.id); return; }
+          abrirFichaCliente(c.id);
+        });
 
         var texto = no('div', 'linha-texto');
-        var titulo = no('div', 'linha-titulo', c.nome);
-        texto.appendChild(titulo);
+        texto.appendChild(no('div', 'linha-titulo', c.nome));
         var sub = no('div', 'linha-sub');
         sub.appendChild(document.createTextNode(
-          servicosDoCliente(c.id).length + ' serviço(s)' + (c.telefone ? ' · ' + c.telefone : '')));
+          servicosDoCliente(c.id).length + ' registro(s)' +
+          (c.telefone ? ' · ' + telefoneBonito(c.telefone) : '')));
         texto.appendChild(sub);
 
         var fim = no('div', 'linha-fim');
-        fim.appendChild(no('div', 'linha-valor num ' + (r.restante > 0 ? 'ouro' : 'verde'), emReais(r.restante)));
-        var etiqueta = no('span', 'etiqueta ' + sit.classe, sit.texto);
-        fim.appendChild(etiqueta);
+        fim.appendChild(no('div', 'linha-valor num ' +
+          (atrasado ? 'vermelho' : r.restante > 0 ? 'ouro' : 'verde'), emReais(r.restante)));
+        fim.appendChild(no('span', 'etiqueta ' + sit.classe, sit.texto));
 
-        juntar(linha, selo(sit.classe === 'quitado' ? '#34D399' : sit.classe === 'atrasado' ? '#F87171' : '#E9B44C',
+        juntar(alvo, selo(atrasado ? '#FF6B6B' : sit.classe === 'quitado' ? '#3DDC84' : '#E9B44C',
           c.nome.charAt(0).toUpperCase()), texto, fim);
+        linha.appendChild(alvo);
+
+        if (r.restante > 0 && temWhatsapp(c)) {
+          var zap = botao('linha-acao', null, function () {
+            abrirWhatsapp(c, mensagemDeCobranca(c));
+          });
+          zap.setAttribute('aria-label', 'Falar com ' + c.nome + ' no WhatsApp');
+          zap.style.color = '#25D366';
+          zap.appendChild(iconeWhatsapp());
+          linha.appendChild(zap);
+        }
+
         cClientes.appendChild(linha);
       });
     }
     tela.appendChild(cClientes);
+
+    if (estado.clientes.length) {
+      var cBackup = cartao();
+      cBackup.appendChild(topoDeCartao('Guardar os dados', null));
+      cBackup.appendChild(no('p', 'linha-sub',
+        'Baixe um arquivo com clientes, registros, parcelas e pagamentos. Serve para guardar fora do aparelho e para restaurar depois.'));
+      var bBackup = botao('btn btn-fantasma', 'Baixar backup', function () { fazerBackup(); });
+      bBackup.style.marginTop = '12px';
+      cBackup.appendChild(bBackup);
+      tela.appendChild(cBackup);
+    }
+  }
+
+  // O que venceu e ainda não foi pago, com o atalho para o WhatsApp.
+  function abrirResumoAtraso(clienteId) {
+    var cliente = achar(estado.clientes, clienteId);
+    if (!cliente) return;
+    var atraso = atrasoDoCliente(clienteId);
+    var r = resumoCliente(clienteId);
+
+    abrirFolha('Cobrança de ' + cliente.nome, function (folha) {
+      var cabeca = cartao();
+      cabeca.appendChild(no('div', 'rotulo', 'Em atraso'));
+      cabeca.appendChild(no('div', 'valorao vermelho num',
+        emReais(atraso.total || r.restante)));
+      if (atraso.desde) {
+        cabeca.appendChild(no('div', 'linha-nota', 'A parcela mais antiga venceu em ' + dataBr(atraso.desde) + '.'));
+      }
+      cabeca.appendChild(no('div', 'linha-nota',
+        'No total, ainda faltam ' + emReais(r.restante) + ' deste cliente.'));
+      folha.appendChild(cabeca);
+
+      if (atraso.vencidas.length) {
+        var lista = cartao();
+        lista.appendChild(no('div', 'cartao-titulo', 'O que deveria ter sido pago'));
+        var caixa = no('div');
+        caixa.style.marginTop = '10px';
+        atraso.vencidas.forEach(function (p) {
+          var servicoP = p.servicoId ? achar(estado.servicos, p.servicoId) : null;
+          var l = no('div', 'parcela-linha vencida');
+          juntar(l,
+            no('span', 'q', 'Parcela ' + p.numero + '/' + p.total + ' · venceu em ' + dataBr(p.vencimento) +
+              (servicoP ? ' · ' + servicoP.nome : '')),
+            no('span', 'v num', emReais(p.valor)));
+          caixa.appendChild(l);
+        });
+        lista.appendChild(caixa);
+        folha.appendChild(lista);
+      } else {
+        var semParcela = cartao();
+        semParcela.appendChild(no('p', 'linha-sub',
+          'Não há parcelas combinadas para este cliente. A data prevista no cadastro já passou.'));
+        folha.appendChild(semParcela);
+      }
+
+      var acoes = no('div', 'acoes');
+      if (temWhatsapp(cliente)) {
+        var whats = botao('btn-whats', null, function () {
+          abrirWhatsapp(cliente, mensagemDeCobranca(cliente));
+        });
+        whats.appendChild(iconeWhatsapp());
+        whats.appendChild(no('span', null, 'Mandar mensagem no WhatsApp'));
+        acoes.appendChild(whats);
+        acoes.appendChild(no('div', 'linha-nota',
+          'A conversa abre com o texto já escrito. Você lê, muda o que quiser e só então envia.'));
+      } else if (cliente.telefone) {
+        acoes.appendChild(no('div', 'linha-nota',
+          'Este cliente está marcado como sem WhatsApp. Você pode mudar isso em Editar cliente.'));
+      } else {
+        acoes.appendChild(no('div', 'linha-nota',
+          'Cadastre o celular do cliente para poder cobrar pelo WhatsApp.'));
+      }
+      acoes.appendChild(botao('btn btn-ouro', 'Registrar pagamento', function () {
+        fecharFolha();
+        setTimeout(function () { abrirFolhaPagamento(clienteId, null); }, 250);
+      }));
+      acoes.appendChild(botao('btn btn-fantasma', 'Abrir a ficha do cliente', function () {
+        fecharFolha();
+        setTimeout(function () { abrirFichaCliente(clienteId); }, 250);
+      }));
+      folha.appendChild(acoes);
+    });
   }
 
   // ---------- Empreendedor: folhas ----------
@@ -4188,14 +4756,20 @@
       var campoNome = entradaTexto(existente ? existente.nome : '', 'Nome do cliente', 60);
       forma.appendChild(campo('Nome', campoNome));
 
-      var campoTelefone = entradaTexto(existente ? existente.telefone : '', '(51) 90000-0000', 30);
-      campoTelefone.type = 'tel';
-      campoTelefone.inputMode = 'tel';
-      forma.appendChild(campo('Telefone', campoTelefone));
+      var campoTelefone = entradaTelefone(existente ? existente.telefone : '');
+      forma.appendChild(campo('Celular', campoTelefone));
 
-      var campoProximo = entradaData(existente && existente.proximoPagamento ? existente.proximoPagamento : '');
-      campoProximo.value = existente ? existente.proximoPagamento : '';
-      forma.appendChild(campo('Próximo pagamento previsto', campoProximo));
+      var temWhats = existente ? existente.whatsapp !== false : true;
+      var marcaWhats = botao('lembrar', null, function () {
+        temWhats = !temWhats;
+        marcaWhats.setAttribute('aria-pressed', temWhats ? 'true' : 'false');
+        marcaWhats.querySelector('.caixinha').textContent = temWhats ? '✓' : '';
+      });
+      marcaWhats.setAttribute('aria-pressed', temWhats ? 'true' : 'false');
+      marcaWhats.style.margin = '-4px 0 16px';
+      marcaWhats.appendChild(no('span', 'caixinha', temWhats ? '✓' : ''));
+      marcaWhats.appendChild(no('span', null, 'Este número tem WhatsApp'));
+      forma.appendChild(marcaWhats);
 
       var campoObs = entradaTexto(existente ? existente.obs : '', 'Anotação (opcional)', 200);
       forma.appendChild(campo('Observação', campoObs));
@@ -4207,14 +4781,15 @@
 
         if (existente) {
           existente.nome = nome;
-          existente.telefone = campoTelefone.value.trim();
-          existente.proximoPagamento = ehData(campoProximo.value) ? campoProximo.value : '';
+          existente.telefone = soDigitos(campoTelefone.value);
+          existente.whatsapp = temWhats;
           existente.obs = campoObs.value.trim();
         } else {
           estado.clientes.push({
-            id: novoId(), nome: nome, telefone: campoTelefone.value.trim(),
+            id: novoId(), nome: nome, telefone: soDigitos(campoTelefone.value),
+            whatsapp: temWhats,
             obs: campoObs.value.trim(),
-            proximoPagamento: ehData(campoProximo.value) ? campoProximo.value : '',
+            proximoPagamento: '',
             criadoEm: Date.now()
           });
         }
@@ -4226,7 +4801,8 @@
 
       if (existente) {
         acoes.appendChild(botao('btn btn-perigo', 'Excluir cliente', function () {
-          var quantos = servicosDoCliente(existente.id).length + pagamentosDoCliente(existente.id).length;
+          var quantos = servicosDoCliente(existente.id).length + pagamentosDoCliente(existente.id).length +
+            estado.parcelas.filter(function (p) { return p.clienteId === existente.id; }).length;
           perguntar({
             titulo: 'Excluir ' + existente.nome + '?',
             texto: 'Vão embora também os ' + quantos + ' registro(s) desse cliente. Não dá para desfazer.',
@@ -4234,9 +4810,11 @@
           }, function () {
           estado.servicos.forEach(function (s) { if (s.clienteId === existente.id) marcarExcluido('servicos', s.id); });
           estado.pagamentos.forEach(function (p) { if (p.clienteId === existente.id) marcarExcluido('pagamentos', p.id); });
+          estado.parcelas.forEach(function (p) { if (p.clienteId === existente.id) marcarExcluido('parcelas', p.id); });
           marcarExcluido('clientes', existente.id);
           estado.servicos = estado.servicos.filter(function (s) { return s.clienteId !== existente.id; });
           estado.pagamentos = estado.pagamentos.filter(function (p) { return p.clienteId !== existente.id; });
+          estado.parcelas = estado.parcelas.filter(function (p) { return p.clienteId !== existente.id; });
           estado.clientes = estado.clientes.filter(function (c) { return c.id !== existente.id; });
           salvar();
           fecharFolha();
@@ -4264,13 +4842,25 @@
     var cliente = achar(estado.clientes, id);
     if (!cliente) { fecharFolha(); return; }
     var r = resumoCliente(id);
+    var atraso = atrasoDoCliente(id);
 
     abrirFolha(cliente.nome, function (folha) {
       if (cliente.telefone) {
-        var tel = no('p', 'linha-sub', cliente.telefone);
+        var tel = no('p', 'linha-sub', telefoneBonito(cliente.telefone));
         tel.style.textAlign = 'center';
         tel.style.marginTop = '-10px';
         folha.appendChild(tel);
+      }
+
+      if (atraso.vencidas.length) {
+        var faixa = no('div', 'aviso-atraso');
+        faixa.style.marginTop = '14px';
+        faixa.appendChild(icone('alerta'));
+        var txtAtraso = no('div');
+        txtAtraso.appendChild(no('div', null, atraso.vencidas.length + ' pagamento(s) em atraso'));
+        txtAtraso.appendChild(no('div', 'n', emReais(atraso.total) + ' desde ' + dataBr(atraso.desde)));
+        faixa.appendChild(txtAtraso);
+        folha.appendChild(faixa);
       }
 
       var cResumo = cartao();
@@ -4284,16 +4874,16 @@
       });
       cResumo.appendChild(grade);
       cResumo.appendChild(progresso(r.pago, r.total || 1, 'var(--verde)'));
-      if (cliente.proximoPagamento && r.restante > 0) {
+      var proximaData = proximoVencimento(id);
+      if (proximaData && r.restante > 0) {
         cResumo.appendChild(no('div', 'linha-nota',
-          'Próximo pagamento previsto para ' + dataBr(cliente.proximoPagamento) +
-          (cliente.proximoPagamento < hojeTexto() ? ' — atrasado.' : '.')));
+          'Próximo pagamento previsto para ' + dataBr(proximaData) + '.'));
       }
       if (cliente.obs) cResumo.appendChild(no('div', 'linha-nota', cliente.obs));
       folha.appendChild(cResumo);
 
       var abas = no('div', 'aba-cliente');
-      [['servicos', 'Serviços'], ['pagamentos', 'Pagamentos']].forEach(function (a) {
+      [['servicos', 'Registros'], ['parcelas', 'Parcelas'], ['pagamentos', 'Pagos']].forEach(function (a) {
         var b = botao(null, a[1], function () {
           if (abaFicha === a[0]) return;
           abaFicha = a[0];
@@ -4308,16 +4898,45 @@
       if (abaFicha === 'servicos') {
         var servicos = servicosDoCliente(id);
         if (!servicos.length) {
-          lista.appendChild(estadoVazio('Nenhum serviço', 'Cadastre o que foi feito e o valor combinado.'));
+          lista.appendChild(estadoVazio('Nenhum registro',
+            'Cadastre a venda ou o serviço e o valor combinado.'));
         } else {
           servicos.forEach(function (s) {
             var linha = botao('linha', null, function () { abrirFolhaServico(id, s.id); });
             juntar(linha,
-              selo('#E9B44C', '#'),
+              selo(corDeCategoria(s.tipo || 'Serviço'), (s.tipo || 'S').charAt(0).toUpperCase()),
               juntar(no('div', 'linha-texto'),
                 no('div', 'linha-titulo', s.nome),
-                no('div', 'linha-sub', dataBr(s.data) + (s.obs ? ' · ' + s.obs : ''))),
+                no('div', 'linha-sub', (s.tipo || 'Serviço') + ' · ' + dataBr(s.data) + (s.obs ? ' · ' + s.obs : ''))),
               juntar(no('div', 'linha-fim'), no('div', 'linha-valor num', emReais(s.valor)))
+            );
+            lista.appendChild(linha);
+          });
+        }
+      } else if (abaFicha === 'parcelas') {
+        var parcelas = parcelasDoCliente(id);
+        if (!parcelas.length) {
+          lista.appendChild(estadoVazio('Sem parcelas combinadas',
+            'Monte a previsão de pagamento para acompanhar o que vence e quando.'));
+        } else {
+          var hojeP = hojeTexto();
+          parcelas.forEach(function (p) {
+            var paga = parcelaPaga(p);
+            var vencida = !paga && p.vencimento < hojeP;
+            var servicoP = p.servicoId ? achar(estado.servicos, p.servicoId) : null;
+            var linha = botao('linha' + (vencida ? ' atrasada' : ''), null, function () {
+              if (paga) { abrirFolhaPagamento(id, p.pagamentoId); return; }
+              abrirFolhaPagamento(id, null, p.id);
+            });
+            juntar(linha,
+              selo(paga ? '#3DDC84' : vencida ? '#FF6B6B' : '#E9B44C', paga ? '✓' : String(p.numero)),
+              juntar(no('div', 'linha-texto'),
+                no('div', 'linha-titulo', 'Parcela ' + p.numero + ' de ' + p.total),
+                no('div', 'linha-sub',
+                  (paga ? 'Paga' : vencida ? 'Venceu' : 'Vence') + ' em ' + dataBr(p.vencimento) +
+                  (servicoP ? ' · ' + servicoP.nome : ''))),
+              juntar(no('div', 'linha-fim'),
+                no('div', 'linha-valor num' + (paga ? ' verde' : vencida ? ' vermelho' : ''), emReais(p.valor)))
             );
             lista.appendChild(linha);
           });
@@ -4345,10 +4964,22 @@
 
       var acoes = no('div', 'acoes');
       if (abaFicha === 'servicos') {
-        acoes.appendChild(botao('btn btn-ouro', '+ Novo serviço', function () { abrirFolhaServico(id, null); }));
+        acoes.appendChild(botao('btn btn-ouro', '+ Nova venda ou serviço', function () { abrirFolhaServico(id, null); }));
+      } else if (abaFicha === 'parcelas') {
+        acoes.appendChild(botao('btn btn-ouro', '+ Combinar parcelas', function () { abrirFolhaParcelamento(id, ''); }));
       } else {
         acoes.appendChild(botao('btn btn-ouro', '+ Registrar pagamento', function () { abrirFolhaPagamento(id, null); }));
       }
+
+      if (r.restante > 0 && temWhatsapp(cliente)) {
+        var whats = botao('btn-whats', null, function () {
+          abrirWhatsapp(cliente, mensagemDeCobranca(cliente));
+        });
+        whats.appendChild(iconeWhatsapp());
+        whats.appendChild(no('span', null, atraso.vencidas.length ? 'Cobrar pelo WhatsApp' : 'Falar no WhatsApp'));
+        acoes.appendChild(whats);
+      }
+
       acoes.appendChild(botao('btn btn-fantasma', 'Editar cliente', function () {
         empilhar({ tipo: 'aba', voltar: function () { montarFichaCliente(id); } });
         abrirFolhaCliente(id);
@@ -4357,22 +4988,129 @@
     });
   }
 
+  // A pessoa escolhe o tipo, cria os seus, renomeia e apaga.
+  function opcoesDeTipo() {
+    return tiposDeRegistro().map(function (t) { return { valor: t, rotulo: t }; });
+  }
+
+  function abrirGerenciarTipos(aoTerminar) {
+    abrirEscolha({
+      titulo: 'Tipos de registro',
+      opcoes: tiposDeRegistro().map(function (t) {
+        return {
+          valor: t,
+          rotulo: t,
+          detalhe: TIPOS_REGISTRO_BASE.indexOf(t) >= 0 ? 'de fábrica' : 'toque para renomear ou excluir'
+        };
+      }),
+      valor: '',
+      acao: { rotulo: '+ Criar tipo novo', aoTocar: function () { criarTipoRegistro(aoTerminar); } }
+    }, function (escolhido) {
+      if (escolhido == null) { if (aoTerminar) aoTerminar(); return; }
+      if (TIPOS_REGISTRO_BASE.indexOf(escolhido) >= 0) {
+        avisarCaixa('Tipo de fábrica', 'Venda, Serviço e Outros não podem ser mudados. Crie um tipo seu, se precisar.',
+          function () { if (aoTerminar) aoTerminar(); });
+        return;
+      }
+      editarTipoRegistro(escolhido, aoTerminar);
+    });
+  }
+
+  function criarTipoRegistro(aoTerminar) {
+    abrirFolhaTexto('Novo tipo', 'Nome do tipo', '', 'Ex.: Locação', function (nome) {
+      if (tiposDeRegistro().indexOf(nome) >= 0) { avisar('Esse tipo já existe.'); return; }
+      estado.tiposRegistro.push(nome);
+      salvar();
+      avisar('Tipo criado.');
+      if (aoTerminar) aoTerminar(nome);
+    }, aoTerminar);
+  }
+
+  function editarTipoRegistro(tipo, aoTerminar) {
+    abrirFolhaTexto('Editar tipo', 'Nome do tipo', tipo, 'Nome do tipo', function (nome) {
+      var i = estado.tiposRegistro.indexOf(tipo);
+      if (i >= 0) estado.tiposRegistro[i] = nome;
+      estado.servicos.forEach(function (s) { if (s.tipo === tipo) s.tipo = nome; });
+      salvar();
+      avisar('Tipo renomeado.');
+      if (aoTerminar) aoTerminar(nome);
+    }, aoTerminar, function (fecharDepois) {
+      var usados = estado.servicos.filter(function (s) { return s.tipo === tipo; }).length;
+      perguntar({
+        titulo: 'Excluir o tipo ' + tipo + '?',
+        texto: usados ? 'Os ' + usados + ' registro(s) com esse tipo passam a valer como "Outros".'
+                      : 'Nenhum registro usa esse tipo hoje.',
+        ok: 'Excluir tipo', tom: 'perigo'
+      }, function () {
+        estado.tiposRegistro = estado.tiposRegistro.filter(function (t) { return t !== tipo; });
+        estado.servicos.forEach(function (s) { if (s.tipo === tipo) s.tipo = 'Outros'; });
+        salvar();
+        avisar('Tipo excluído.');
+        fecharDepois('Outros');
+      });
+    });
+  }
+
+  // Uma folha pequena com um campo de texto só, para nomear coisas.
+  function abrirFolhaTexto(titulo, rotulo, valor, dica, aoSalvar, aoVoltar, aoExcluir) {
+    empilhar({ tipo: 'aba', voltar: function () { if (aoVoltar) aoVoltar(); } });
+    abrirFolha(titulo, function (folha) {
+      var forma = no('div');
+      var entrada = entradaTexto(valor, dica, 30);
+      forma.appendChild(campo(rotulo, entrada));
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
+        var nome = entrada.value.trim();
+        if (!nome) { mostrarErro(forma, 'Escreva um nome.'); return; }
+        voltarNavegacao();
+        setTimeout(function () { aoSalvar(nome); }, 240);
+      }));
+      if (aoExcluir) {
+        acoes.appendChild(botao('btn btn-perigo', 'Excluir', function () {
+          aoExcluir(function (subs) {
+            voltarNavegacao();
+            setTimeout(function () { if (aoVoltar) aoVoltar(subs); }, 240);
+          });
+        }));
+      }
+      forma.appendChild(acoes);
+      folha.appendChild(forma);
+      setTimeout(function () { entrada.focus(); }, 270);
+    });
+  }
+
   function abrirFolhaServico(clienteId, servicoId) {
     var existente = servicoId ? achar(estado.servicos, servicoId) : null;
+    var tipoEscolhido = existente ? (existente.tipo || 'Serviço') : 'Serviço';
     empilhar({ tipo: 'aba', voltar: function () { montarFichaCliente(clienteId); } });
 
-    abrirFolha(existente ? 'Editar serviço' : 'Novo serviço', function (folha) {
+    abrirFolha(existente ? 'Editar registro' : 'Nova venda ou serviço', function (folha) {
       var forma = no('div');
 
       var campoValorEl = entradaValor(existente ? existente.valor : 0, true);
       campoValorEl.style.color = 'var(--ouro)';
-      forma.appendChild(campo('Valor do serviço', campoValorEl));
+      forma.appendChild(campo('Valor combinado', campoValorEl));
+
+      var campoTipo = entradaSelecao(opcoesDeTipo(), tipoEscolhido, 'Tipo do registro');
+      campoTipo.aoMudar = function (v) { tipoEscolhido = v; };
+      var linhaTipo = no('div', 'linha-dupla-campo');
+      var lapisTipo = botao('linha-acao', null, function () {
+        abrirGerenciarTipos(function (novo) {
+          campoTipo.trocarOpcoes(opcoesDeTipo(), novo || campoTipo.value);
+          tipoEscolhido = campoTipo.value;
+        });
+      });
+      lapisTipo.setAttribute('aria-label', 'Editar os tipos');
+      lapisTipo.appendChild(icone('lapis'));
+      juntar(linhaTipo, campoTipo, lapisTipo);
+      forma.appendChild(campo('Tipo', linhaTipo));
 
       var campoNome = entradaTexto(existente ? existente.nome : '', 'Ex.: Troca de embreagem', 60);
-      forma.appendChild(campo('Qual serviço', campoNome));
+      forma.appendChild(campo('O que foi', campoNome));
 
       var campoData = entradaData(existente ? existente.data : hojeTexto());
-      forma.appendChild(campo('Data', campoData));
+      forma.appendChild(campo('Realizado na data', campoData));
 
       var campoObs = entradaTexto(existente ? existente.obs : '', 'Observação (opcional)', 200);
       forma.appendChild(campo('Observação', campoObs));
@@ -4381,39 +5119,54 @@
       acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
         var valor = digitosParaCentavos(campoValorEl.value);
         var nome = campoNome.value.trim();
-        if (valor <= 0) { mostrarErro(forma, 'Informe o valor do serviço.'); return; }
-        if (!nome) { mostrarErro(forma, 'Escreva qual foi o serviço.'); return; }
+        if (valor <= 0) { mostrarErro(forma, 'Informe o valor combinado.'); return; }
+        if (!nome) { mostrarErro(forma, 'Escreva o que foi vendido ou feito.'); return; }
         if (!ehData(campoData.value)) { mostrarErro(forma, 'Escolha uma data válida.'); return; }
 
+        var novoServicoId = existente ? existente.id : novoId();
         if (existente) {
           existente.nome = nome;
+          existente.tipo = campoTipo.value;
           existente.valor = valor;
           existente.data = campoData.value;
           existente.obs = campoObs.value.trim();
         } else {
           estado.servicos.push({
-            id: novoId(), clienteId: clienteId, nome: nome, valor: valor,
-            data: campoData.value, obs: campoObs.value.trim(), criadoEm: Date.now()
+            id: novoServicoId, clienteId: clienteId, nome: nome, tipo: campoTipo.value,
+            valor: valor, data: campoData.value, obs: campoObs.value.trim(), criadoEm: Date.now()
           });
         }
         salvar();
         voltarNavegacao();
-        avisar(existente ? 'Serviço atualizado.' : 'Serviço cadastrado.');
+        if (existente) { avisar('Registro atualizado.'); return; }
+        setTimeout(function () {
+          perguntar({
+            titulo: 'Combinar o pagamento?',
+            texto: 'Você pode montar agora a previsão de parcelas de ' + emReais(valor) + '.',
+            ok: 'Combinar parcelas', cancelar: 'Agora não', icone: 'alvo'
+          }, function () { abrirFolhaParcelamento(clienteId, novoServicoId); });
+        }, 320);
       }));
 
       if (existente) {
-        acoes.appendChild(botao('btn btn-perigo', 'Excluir serviço', function () {
+        acoes.appendChild(botao('btn btn-perigo', 'Excluir registro', function () {
           perguntar({
-            titulo: 'Excluir este serviço?',
-            texto: 'Os pagamentos ligados a ele continuam registrados, mas soltos.',
-            ok: 'Excluir serviço', tom: 'perigo'
+            titulo: 'Excluir este registro?',
+            texto: 'Os pagamentos já recebidos continuam registrados; as parcelas em aberto saem junto.',
+            ok: 'Excluir registro', tom: 'perigo'
           }, function () {
             marcarExcluido('servicos', existente.id);
             estado.servicos = estado.servicos.filter(function (s) { return s.id !== existente.id; });
             estado.pagamentos.forEach(function (p) { if (p.servicoId === existente.id) p.servicoId = ''; });
+            estado.parcelas.forEach(function (p) {
+              if (p.servicoId === existente.id && !parcelaPaga(p)) marcarExcluido('parcelas', p.id);
+            });
+            estado.parcelas = estado.parcelas.filter(function (p) {
+              return p.servicoId !== existente.id || parcelaPaga(p);
+            });
             salvar();
             voltarNavegacao();
-            avisar('Serviço excluído.');
+            avisar('Registro excluído.');
           });
         }));
       }
@@ -4423,8 +5176,205 @@
     });
   }
 
-  function abrirFolhaPagamento(clienteId, pagamentoId) {
+  // ---------- Folha: previsão de pagamento (parcelas) ----------
+  //
+  // Divide o valor, aplica o acréscimo escolhido e mostra o resumo do que
+  // vai ser cobrado. Só grava quando você confirma.
+
+  function calcularParcelas(base, vezes, modo, acrescimo, primeira) {
+    vezes = Math.max(1, Math.min(inteiro(vezes) || 1, 60));
+    var fatia = Math.floor(base / vezes);
+    var sobra = base - fatia * vezes;
+    var itens = [];
+    for (var i = 0; i < vezes; i++) {
+      var semAcrescimo = fatia + (i === 0 ? sobra : 0);
+      var valor = semAcrescimo;
+      if (modo === 'porcento' && acrescimo > 0) valor = Math.round(semAcrescimo * (1 + acrescimo / 100));
+      if (modo === 'reais' && acrescimo > 0) valor = semAcrescimo + acrescimo;
+      itens.push({
+        numero: i + 1,
+        total: vezes,
+        valor: valor,
+        semAcrescimo: semAcrescimo,
+        vencimento: somaMeses(primeira, i)
+      });
+    }
+    var total = itens.reduce(function (soma, p) { return soma + p.valor; }, 0);
+    return { itens: itens, total: total, acrescimoTotal: total - base };
+  }
+
+  function abrirFolhaParcelamento(clienteId, servicoId) {
+    var cliente = achar(estado.clientes, clienteId);
+    if (!cliente) return;
+    var servicos = servicosDoCliente(clienteId);
+    var servicoInicial = servicoId ? achar(estado.servicos, servicoId) : null;
+    var r = resumoCliente(clienteId);
+    var jaParcelado = parcelasDoCliente(clienteId)
+      .filter(function (p) { return !parcelaPaga(p); })
+      .reduce(function (soma, p) { return soma + p.valor; }, 0);
+    var sugestao = servicoInicial ? servicoInicial.valor : Math.max(r.restante - jaParcelado, 0);
+
+    var vezes = 1;
+    var modo = 'nenhum';
+
+    empilhar({ tipo: 'aba', voltar: function () { montarFichaCliente(clienteId); } });
+
+    abrirFolha('Previsão de pagamento', function (folha) {
+      var forma = no('div');
+
+      var campoValorEl = entradaValor(sugestao, true);
+      campoValorEl.style.color = 'var(--ouro)';
+      forma.appendChild(campo('Valor a combinar', campoValorEl));
+
+      var opcoesServico = [{ valor: '', rotulo: 'Sem registro específico' }].concat(
+        servicos.map(function (sv) { return { valor: sv.id, rotulo: sv.nome, detalhe: (sv.tipo || 'Serviço') + ' · ' + emReais(sv.valor) }; }));
+      var campoServico = entradaSelecao(opcoesServico, servicoId || '', 'Referente a');
+      forma.appendChild(campo('Referente a', campoServico));
+
+      var campoData = entradaData(hojeTexto());
+      forma.appendChild(campo('Primeira parcela vence em', campoData));
+
+      var opcoesVezes = [];
+      for (var v = 1; v <= 24; v++) {
+        opcoesVezes.push({ valor: String(v), rotulo: v === 1 ? 'À vista (1x)' : v + 'x' });
+      }
+      var campoVezes = entradaSelecao(opcoesVezes, '1', 'Em quantas vezes');
+      forma.appendChild(campo('Em quantas vezes', campoVezes));
+
+      var campoModo = entradaSelecao([
+        { valor: 'nenhum', rotulo: 'Sem acréscimo' },
+        { valor: 'porcento', rotulo: 'Acrescentar % por parcela' },
+        { valor: 'reais', rotulo: 'Acrescentar R$ por parcela' }
+      ], 'nenhum', 'Acréscimo');
+      forma.appendChild(campo('Acréscimo', campoModo));
+
+      var campoPorcento = entradaTextoNumero('0', '0');
+      var caixaPorcento = campo('Quanto por cento por parcela', campoPorcento);
+      caixaPorcento.style.display = 'none';
+      forma.appendChild(caixaPorcento);
+
+      var campoReais = entradaValor(0, false);
+      var caixaReais = campo('Quantos reais por parcela', campoReais);
+      caixaReais.style.display = 'none';
+      forma.appendChild(caixaReais);
+
+      var resumo = cartao();
+      forma.appendChild(resumo);
+
+      function lerAcrescimo() {
+        if (modo === 'porcento') {
+          var p = Number(String(campoPorcento.value).replace(',', '.'));
+          return isFinite(p) && p > 0 ? Math.min(p, 300) : 0;
+        }
+        if (modo === 'reais') return digitosParaCentavos(campoReais.value);
+        return 0;
+      }
+
+      function contas() {
+        return calcularParcelas(
+          digitosParaCentavos(campoValorEl.value),
+          vezes, modo, lerAcrescimo(),
+          ehData(campoData.value) ? campoData.value : hojeTexto()
+        );
+      }
+
+      function pintarResumo() {
+        resumo.textContent = '';
+        var base = digitosParaCentavos(campoValorEl.value);
+        if (base <= 0) {
+          resumo.appendChild(no('div', 'linha-sub', 'Informe o valor para ver o resumo do parcelamento.'));
+          return;
+        }
+        var c = contas();
+        resumo.appendChild(no('div', 'rotulo', 'Vai ser cobrado'));
+        resumo.appendChild(no('div', 'valorao pequeno num', emReais(c.total)));
+        var detalhe = vezes + 'x de ' + emReais(c.itens[0].valor);
+        if (vezes > 1 && c.itens[0].valor !== c.itens[vezes - 1].valor) {
+          detalhe = vezes + 'x — a primeira de ' + emReais(c.itens[0].valor) +
+            ' e as outras de ' + emReais(c.itens[vezes - 1].valor);
+        }
+        resumo.appendChild(no('div', 'linha-nota', detalhe));
+        if (c.acrescimoTotal > 0) {
+          resumo.appendChild(no('div', 'linha-nota ouro',
+            'Acréscimo de ' + emReais(c.acrescimoTotal) + ' sobre os ' + emReais(base) + ' combinados.'));
+        }
+
+        var lista = no('div');
+        lista.style.marginTop = '12px';
+        c.itens.forEach(function (p) {
+          var linha = no('div', 'parcela-linha');
+          juntar(linha,
+            no('span', 'q', p.numero + '/' + p.total + ' · ' + dataBr(p.vencimento)),
+            no('span', 'v num', emReais(p.valor)));
+          lista.appendChild(linha);
+        });
+        resumo.appendChild(lista);
+      }
+
+      campoValorEl.addEventListener('input', pintarResumo);
+      campoData.addEventListener('change', pintarResumo);
+      campoPorcento.addEventListener('input', pintarResumo);
+      campoReais.addEventListener('input', pintarResumo);
+      campoVezes.aoMudar = function (v) { vezes = parseInt(v, 10) || 1; pintarResumo(); };
+      campoModo.aoMudar = function (v) {
+        modo = v;
+        caixaPorcento.style.display = v === 'porcento' ? '' : 'none';
+        caixaReais.style.display = v === 'reais' ? '' : 'none';
+        pintarResumo();
+      };
+      pintarResumo();
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Confirmar parcelamento', function () {
+        var base = digitosParaCentavos(campoValorEl.value);
+        if (base <= 0) { mostrarErro(forma, 'Informe o valor a combinar.'); return; }
+        if (!ehData(campoData.value)) { mostrarErro(forma, 'Escolha a data da primeira parcela.'); return; }
+        var c = contas();
+
+        perguntar({
+          titulo: 'Confirmar ' + vezes + 'x de ' + emReais(c.itens[0].valor) + '?',
+          texto: 'Total de ' + emReais(c.total) +
+            (c.acrescimoTotal > 0 ? ', com ' + emReais(c.acrescimoTotal) + ' de acréscimo' : '') +
+            '. Primeira em ' + dataBr(c.itens[0].vencimento) +
+            ', última em ' + dataBr(c.itens[c.itens.length - 1].vencimento) + '.',
+          ok: 'Confirmar', icone: 'alvo'
+        }, function () {
+          c.itens.forEach(function (p) {
+            estado.parcelas.push({
+              id: novoId(),
+              clienteId: clienteId,
+              servicoId: campoServico.value,
+              numero: p.numero,
+              total: p.total,
+              valor: p.valor,
+              vencimento: p.vencimento,
+              pagamentoId: '',
+              criadoEm: Date.now()
+            });
+          });
+          // O acréscimo é dinheiro a mais a receber: entra como registro próprio.
+          if (c.acrescimoTotal > 0) {
+            estado.servicos.push({
+              id: novoId(), clienteId: clienteId,
+              nome: 'Acréscimo do parcelamento em ' + vezes + 'x',
+              tipo: 'Outros', valor: c.acrescimoTotal,
+              data: c.itens[0].vencimento, obs: '', criadoEm: Date.now()
+            });
+          }
+          salvar();
+          abaFicha = 'parcelas';
+          voltarNavegacao();
+          avisar('Parcelamento combinado.');
+        });
+      }));
+      forma.appendChild(acoes);
+      folha.appendChild(forma);
+    });
+  }
+
+  function abrirFolhaPagamento(clienteId, pagamentoId, parcelaId) {
     var existente = pagamentoId ? achar(estado.pagamentos, pagamentoId) : null;
+    var parcela = parcelaId ? achar(estado.parcelas, parcelaId) : null;
     var r = resumoCliente(clienteId);
     var servicos = servicosDoCliente(clienteId);
     var lancarNoCaixa = !existente;
@@ -4433,11 +5383,19 @@
     abrirFolha(existente ? 'Editar pagamento' : 'Registrar pagamento', function (folha) {
       var forma = no('div');
 
-      var campoValorEl = entradaValor(existente ? existente.valor : 0, true);
+      var campoValorEl = entradaValor(existente ? existente.valor : (parcela ? parcela.valor : 0), true);
       campoValorEl.style.color = 'var(--verde)';
       forma.appendChild(campo('Valor recebido', campoValorEl));
 
-      if (!existente && r.restante > 0) {
+      if (parcela) {
+        var notaParcela = no('div', 'linha-nota',
+          'Parcela ' + parcela.numero + ' de ' + parcela.total + ', com vencimento em ' +
+          dataBr(parcela.vencimento) + '.');
+        notaParcela.style.margin = '-8px 0 14px';
+        forma.appendChild(notaParcela);
+      }
+
+      if (!existente && !parcela && r.restante > 0) {
         var atalhos = no('div', 'chips');
         atalhos.appendChild(botao('chip', 'Tudo: ' + emReais(r.restante), function () {
           campoValorEl.value = emReais(r.restante);
@@ -4451,10 +5409,21 @@
       var campoData = entradaData(existente ? existente.data : hojeTexto());
       forma.appendChild(campo('Data do pagamento', campoData));
 
-      var opcoesServico = [{ valor: '', rotulo: 'Sem serviço específico' }].concat(
-        servicos.map(function (s) { return { valor: s.id, rotulo: s.nome + ' — ' + emReais(s.valor) }; }));
-      var campoServico = entradaSelecao(opcoesServico, existente ? existente.servicoId : '');
+      var opcoesServico = [{ valor: '', rotulo: 'Sem registro específico' }].concat(
+        servicos.map(function (s) {
+          return { valor: s.id, rotulo: s.nome, detalhe: (s.tipo || 'Serviço') + ' · ' + emReais(s.valor) };
+        }));
+      var campoServico = entradaSelecao(opcoesServico,
+        existente ? existente.servicoId : (parcela ? parcela.servicoId : ''), 'Referente a');
       forma.appendChild(campo('Referente a', campoServico));
+
+      var proximaDepois = proximoVencimento(clienteId);
+      if (proximaDepois) {
+        var notaProxima = no('div', 'linha-nota',
+          'Próximo pagamento previsto para ' + dataBr(proximaDepois) + '.');
+        notaProxima.style.margin = '-6px 0 14px';
+        forma.appendChild(notaProxima);
+      }
 
       var campoConta = null;
       if (!existente && estado.contas.length) {
@@ -4503,10 +5472,12 @@
               criadoEm: Date.now()
             });
           }
+          var idPagamento = novoId();
           estado.pagamentos.push({
-            id: novoId(), clienteId: clienteId, servicoId: campoServico.value,
+            id: idPagamento, clienteId: clienteId, servicoId: campoServico.value,
             valor: valor, data: campoData.value, lancamentoId: lancamentoId, criadoEm: Date.now()
           });
+          if (parcela) parcela.pagamentoId = idPagamento;
         }
 
         salvar();
@@ -4527,6 +5498,7 @@
             }
             marcarExcluido('pagamentos', existente.id);
             estado.pagamentos = estado.pagamentos.filter(function (p) { return p.id !== existente.id; });
+            estado.parcelas.forEach(function (p) { if (p.pagamentoId === existente.id) p.pagamentoId = ''; });
             salvar();
             voltarNavegacao();
             avisar('Pagamento excluído.');
@@ -4585,6 +5557,12 @@
     tela.appendChild(busca);
 
     tela.appendChild(segmentos([
+      { valor: 'mes', rotulo: nomeDoPeriodo('mes') },
+      { valor: 'tres', rotulo: 'Últimos 3 meses' },
+      { valor: 'ano', rotulo: 'Último ano' }
+    ], periodoTransacoes, function (v) { periodoTransacoes = v; desenharTransacoes(); }));
+
+    tela.appendChild(segmentos([
       { valor: 'todas', rotulo: 'Todas' },
       { valor: 'entrada', rotulo: 'Receitas' },
       { valor: 'saida', rotulo: 'Despesas' },
@@ -4597,13 +5575,49 @@
     desenharListaTransacoes();
   }
 
+  // O trecho de tempo que a lista cobre. O mês escolhido é o de sempre;
+  // os outros dois olham para trás a partir de hoje.
+  function nomeDoPeriodo(qual) {
+    if (qual === 'tres') return '3 meses';
+    if (qual === 'ano') return '12 meses';
+    var mesmoAno = mesAtivo.ano === new Date().getFullYear();
+    return MESES_CURTO[mesAtivo.mes] + (mesmoAno ? '' : '/' + String(mesAtivo.ano).slice(2));
+  }
+
+  function faixaDoPeriodo() {
+    if (periodoTransacoes === 'mes') {
+      var pre = prefixoMes(mesAtivo.ano, mesAtivo.mes);
+      return {
+        de: pre + '-01',
+        ate: ultimoDiaDoMes(mesAtivo.ano, mesAtivo.mes),
+        rotulo: MESES[mesAtivo.mes] + ' de ' + mesAtivo.ano
+      };
+    }
+    var hoje = new Date();
+    var meses = periodoTransacoes === 'tres' ? 3 : 12;
+    var inicio = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1), 1);
+    return {
+      de: deData(inicio),
+      ate: hojeTexto(),
+      rotulo: meses === 3 ? 'nos últimos 3 meses' : 'nos últimos 12 meses'
+    };
+  }
+
+  function lancamentosDoPeriodo() {
+    var faixa = faixaDoPeriodo();
+    return estado.lancamentos.filter(function (l) {
+      return l.data >= faixa.de && l.data <= faixa.ate;
+    });
+  }
+
   function desenharListaTransacoes() {
     var alvo = $('listaTransacoes');
     if (!alvo) return;
     alvo.textContent = '';
 
     var termo = buscaTransacoes.trim().toLowerCase();
-    var itens = lancamentosDoMes(mesAtivo.ano, mesAtivo.mes).filter(function (l) {
+    var faixa = faixaDoPeriodo();
+    var itens = lancamentosDoPeriodo().filter(function (l) {
       if (filtroTransacoes !== 'todas' && l.tipo !== filtroTransacoes) return false;
       if (!termo) return true;
       return (l.descricao + ' ' + l.categoria).toLowerCase().indexOf(termo) >= 0;
@@ -4613,7 +5627,9 @@
       var c = cartao('liso');
       c.appendChild(estadoVazio(
         termo ? 'Nada encontrado' : 'Nenhum lançamento',
-        termo ? 'Tente outro termo de busca.' : 'Toque no + para registrar o primeiro movimento de ' + MESES[mesAtivo.mes] + '.'
+        termo ? 'Tente outro termo de busca.'
+              : 'Toque no + para registrar o primeiro movimento ' +
+                (periodoTransacoes === 'mes' ? 'de ' + MESES[mesAtivo.mes] : faixa.rotulo) + '.'
       ));
       alvo.appendChild(c);
       return;
@@ -4637,16 +5653,35 @@
       alvo.appendChild(cartaoDia);
     });
 
-    var t = totaisDoMes(mesAtivo.ano, mesAtivo.mes);
+    var entradas = 0, saidas = 0;
+    lancamentosDoPeriodo().forEach(function (l) {
+      if (l.tipo === 'entrada') entradas += l.valor;
+      else if (l.tipo === 'saida') saidas += l.valor;
+    });
+    var saldo = entradas - saidas;
+
     var resumo = cartao();
     resumo.style.marginTop = '16px';
     var linhaResumo = no('div', 'cartao-topo');
-    linhaResumo.style.marginBottom = '0';
+    linhaResumo.style.marginBottom = '8px';
     juntar(linhaResumo,
       no('div', 'cartao-titulo', 'Saldo do período'),
-      no('div', 'linha-valor num ' + (t.saldo >= 0 ? 'verde' : 'vermelho'), emReais(t.saldo))
+      no('div', 'linha-valor num ' + (saldo >= 0 ? 'verde' : 'vermelho'), emReais(saldo))
     );
     resumo.appendChild(linhaResumo);
+    var gradeResumo = no('div', 'resumo-grade');
+    gradeResumo.style.marginTop = '0';
+    [['Entradas', entradas, 'verde'], ['Saídas', saidas, 'vermelho'],
+     ['Lançamentos', itens.length, '']].forEach(function (item) {
+      var d = no('div');
+      d.appendChild(no('div', 'r', item[0]));
+      d.appendChild(no('div', 'v ' + item[2], item[0] === 'Lançamentos' ? String(item[1]) : emReais(item[1])));
+      gradeResumo.appendChild(d);
+    });
+    resumo.appendChild(gradeResumo);
+    resumo.appendChild(no('div', 'linha-nota',
+      periodoTransacoes === 'mes' ? MESES[mesAtivo.mes] + ' de ' + mesAtivo.ano
+        : 'De ' + dataBr(faixa.de) + ' a ' + dataBr(faixa.ate) + '.'));
     alvo.appendChild(resumo);
   }
 
@@ -4957,15 +5992,18 @@
         bloco.style.textAlign = 'left';
         bloco.style.marginBottom = '15px';
 
+        var jaTem = guardadoDaMeta(m);
+        var contaMeta = m.contaId ? achar(estado.contas, m.contaId) : null;
         var topoMeta = no('div', 'legenda-item');
         topoMeta.style.marginBottom = '5px';
         juntar(topoMeta,
           no('span', 'nome', m.nome),
-          no('span', 'pct num', Math.round(pct(m.guardado, m.alvo)) + '%')
+          no('span', 'pct num', Math.round(pct(jaTem, m.alvo)) + '%')
         );
         bloco.appendChild(topoMeta);
-        bloco.appendChild(progresso(m.guardado, m.alvo, 'var(--ouro)'));
-        var nota = no('div', 'linha-nota', emReais(m.guardado) + ' de ' + emReais(m.alvo) +
+        bloco.appendChild(progresso(jaTem, m.alvo, 'var(--ouro)'));
+        var nota = no('div', 'linha-nota', emReais(jaTem) + ' de ' + emReais(m.alvo) +
+          (contaMeta ? ' · saldo de ' + contaMeta.nome : '') +
           (m.prazo ? ' · até ' + dataBr(m.prazo) : ''));
         nota.style.marginTop = '5px';
         bloco.appendChild(nota);
@@ -4974,54 +6012,94 @@
     }
     tela.appendChild(cMetas);
 
-    // Reserva de emergência
-    var media = mediaDespesas(3);
-    var ideal = media * estado.perfil.reservaMeses;
-    var guardado = Math.max(totalEmContas(null), 0);
-    var cRes = cartao();
-    cRes.appendChild(topoDeCartao('Reserva de emergência', 'Ajustar', function () { abrirFolhaReserva(); }));
-    if (!ideal) {
-      cRes.appendChild(no('p', 'linha-sub', 'Registre suas despesas por um mês para calcularmos a reserva ideal.'));
-    } else {
-      var linhaRes = no('div', 'cartao-topo');
-      linhaRes.style.marginBottom = '8px';
-      juntar(linhaRes,
-        no('div', 'linha-valor num', emReais(guardado) + ' / ' + emReais(ideal)),
-        no('div', 'linha-valor num ouro', Math.round(pct(guardado, ideal)) + '%')
-      );
-      cRes.appendChild(linhaRes);
-      cRes.appendChild(progresso(guardado, ideal, 'var(--ouro)'));
-      cRes.appendChild(no('div', 'linha-nota',
-        estado.perfil.reservaMeses + ' meses de despesa, com média de ' + emReais(media) + ' por mês. ' +
-        'Contamos o saldo das suas contas como reserva.'));
+    // Reserva de emergência — só aparece se você quiser tê-la.
+    if (estado.perfil.reservaLigada) {
+      var res = calculoReserva();
+      var cRes = cartao();
+      cRes.appendChild(topoDeCartao('Reserva de emergência', 'Ajustar', function () { abrirFolhaReserva(); }));
+      if (!res.ideal) {
+        cRes.appendChild(no('p', 'linha-sub', 'Registre suas despesas por um mês para calcularmos a reserva ideal.'));
+      } else {
+        var linhaRes = no('div', 'cartao-topo');
+        linhaRes.style.marginBottom = '8px';
+        juntar(linhaRes,
+          no('div', 'linha-valor num', emReais(res.guardado) + ' / ' + emReais(res.ideal)),
+          no('div', 'linha-valor num ' + (res.falta > 0 ? 'ouro' : 'verde'),
+            Math.round(pct(res.guardado, res.ideal)) + '%')
+        );
+        cRes.appendChild(linhaRes);
+        cRes.appendChild(progresso(res.guardado, res.ideal, res.falta > 0 ? 'var(--ouro)' : 'var(--verde)'));
+
+        var gradeRes = no('div', 'resumo-grade');
+        var contaRes = estado.perfil.reservaConta ? achar(estado.contas, estado.perfil.reservaConta) : null;
+        [
+          ['Reserva ideal', res.ideal, 'ouro'],
+          [contaRes ? contaRes.nome : (res.origem === 'manual' ? 'Informado' : 'Nas contas'), res.guardado, 'verde'],
+          ['Falta', res.falta, res.falta > 0 ? 'vermelho' : 'verde']
+        ].forEach(function (item) {
+          var d = no('div');
+          d.appendChild(no('div', 'r', item[0]));
+          d.appendChild(no('div', 'v ' + item[2], emReais(item[1])));
+          gradeRes.appendChild(d);
+        });
+        cRes.appendChild(gradeRes);
+
+        cRes.appendChild(no('div', 'linha-nota',
+          estado.perfil.reservaMeses + ' meses de despesa, com média de ' + emReais(res.media) + ' por mês.'));
+      }
+      tela.appendChild(cRes);
     }
-    tela.appendChild(cRes);
 
     // Aposentadoria
     var p = estado.perfil;
-    var anos = Math.max(0, p.idadeAposentadoria - p.idadeAtual);
-    var meses = anos * 12;
-    var taxaMes = Math.pow(1 + p.rendimentoAnual / 100, 1 / 12) - 1;
-    var atual = patrimonio(null);
-    var futuro;
-    if (taxaMes > 0) {
-      futuro = atual * Math.pow(1 + taxaMes, meses) +
-        p.aporteMensal * ((Math.pow(1 + taxaMes, meses) - 1) / taxaMes);
-    } else {
-      futuro = atual + p.aporteMensal * meses;
-    }
-    futuro = Math.round(futuro);
+    var a = calculoAposentadoria();
 
     var cApos = cartao();
     cApos.appendChild(topoDeCartao('Aposentadoria', 'Ajustar', function () { abrirFolhaAposentadoria(); }));
     cApos.appendChild(no('div', 'rotulo', 'Projeção aos ' + p.idadeAposentadoria + ' anos'));
-    cApos.appendChild(no('div', 'valorao pequeno num ouro', emReais(futuro)));
+    cApos.appendChild(no('div', 'valorao pequeno num ouro', emReais(a.bruto)));
     cApos.appendChild(no('div', 'linha-nota',
-      anos + ' anos de aporte, ' + emReais(p.aporteMensal) + ' por mês, a ' +
-      String(p.rendimentoAnual).replace('.', ',') + '% ao ano.'));
-    var renda = Math.round(futuro * 0.04 / 12);
+      a.anos + ' anos de aporte, ' + emReais(p.aporteMensal) + ' por mês, a ' +
+      numeroBr(p.rendimentoAnual) + '% ao ano.'));
+
+    var gradeApos = no('div', 'resumo-grade');
+    [
+      ['Investido', emReaisCurto(a.investido), ''],
+      ['Em juros', emReaisCurto(a.juros), 'verde'],
+      ['Multiplica', numeroBr(Math.round(a.multiplicador * 10) / 10) + 'x', 'ouro']
+    ].forEach(function (item) {
+      var d = no('div');
+      d.appendChild(no('div', 'r', item[0]));
+      d.appendChild(no('div', 'v ' + item[2], item[1]));
+      gradeApos.appendChild(d);
+    });
+    cApos.appendChild(gradeApos);
+
+    if (a.meta > 0) {
+      var barraMeta = no('div');
+      barraMeta.style.marginTop = '14px';
+      var topoMetaPat = no('div', 'legenda-item');
+      topoMetaPat.style.marginBottom = '5px';
+      juntar(topoMetaPat,
+        no('span', 'nome', 'Meta de patrimônio'),
+        no('span', 'pct num', Math.round(a.metaPct) + '%'));
+      barraMeta.appendChild(topoMetaPat);
+      barraMeta.appendChild(progresso(a.bruto, a.meta,
+        a.metaPct >= 100 ? 'var(--verde)' : 'var(--ouro)'));
+      barraMeta.appendChild(no('div', 'linha-nota',
+        emReais(a.bruto) + ' de ' + emReais(a.meta) +
+        (a.metaPct >= 100 ? ' — meta alcançada.' : ' — faltam ' + emReais(a.meta - a.bruto) + '.')));
+      cApos.appendChild(barraMeta);
+    }
+
     cApos.appendChild(no('div', 'linha-nota',
-      'Renda estimada de ' + emReais(renda) + ' por mês, retirando 4% ao ano.'));
+      'Renda estimada de ' + emReais(a.rendaPassiva) + ' por mês, retirando ' +
+      numeroBr(p.retiradaAnual) + '% ao ano.'));
+    if (p.inflacaoAnual > 0) {
+      cApos.appendChild(no('div', 'linha-nota',
+        'Descontando ' + numeroBr(p.inflacaoAnual) + '% de inflação, isso vale ' +
+        emReais(a.real) + ' em dinheiro de hoje.'));
+    }
     tela.appendChild(cApos);
   }
 
@@ -5499,21 +6577,168 @@
     return i;
   }
 
-  function entradaSelecao(opcoes, valor) {
-    var s = no('select', 'entrada');
-    s.id = proximoId();
-    opcoes.forEach(function (op) {
-      var o = no('option', null, op.rotulo);
-      o.value = op.valor;
-      if (op.valor === valor) o.selected = true;
-      s.appendChild(o);
+  // Um campo de escolha com a cara do app. Expõe .value como um <select>,
+  // então quem já usava continua usando do mesmo jeito.
+  // Número escrito à mão, com vírgula ou ponto. Nada de type=number: no
+  // celular ele engole o que a pessoa digita quando o formato não bate.
+  function entradaTextoNumero(valor, dica) {
+    var i = no('input', 'entrada');
+    i.type = 'text';
+    i.id = proximoId();
+    i.inputMode = 'decimal';
+    i.autocomplete = 'off';
+    i.value = String(valor == null ? '' : valor).replace('.', ',');
+    if (dica) i.placeholder = dica;
+    i.addEventListener('input', function () {
+      var limpo = i.value.replace(/[^0-9.,]/g, '').replace(/[.,]/g, function (m, pos, todo) {
+        return todo.slice(0, pos).search(/[.,]/) >= 0 ? '' : ',';
+      });
+      if (limpo !== i.value) i.value = limpo;
     });
-    return s;
+    return i;
+  }
+
+  function comoNumero(v, padrao) {
+    var x = Number(String(v == null ? '' : v).replace(',', '.').trim());
+    return isFinite(x) ? x : padrao;
+  }
+
+  function entradaSelecao(opcoes, valor, titulo) {
+    var b = no('button', 'entrada selecao');
+    b.id = proximoId();
+    var lista = opcoes.slice();
+    var atual = valor;
+
+    var rotulo = no('span', 'rotulo-valor');
+    var seta = no('span', 'seta', '▾');
+    juntar(b, rotulo, seta);
+
+    function achou() {
+      for (var i = 0; i < lista.length; i++) if (lista[i].valor === atual) return lista[i];
+      return lista[0] || null;
+    }
+
+    function pintar() {
+      var op = achou();
+      rotulo.textContent = op ? op.rotulo : '';
+      rotulo.style.color = op && op.valor === '' ? 'var(--fraco)' : '';
+    }
+
+    b.addEventListener('click', function () {
+      b.setAttribute('aria-expanded', 'true');
+      abrirEscolha({
+        titulo: titulo || 'Escolha',
+        opcoes: lista,
+        valor: atual
+      }, function (escolhido) {
+        b.setAttribute('aria-expanded', 'false');
+        if (escolhido == null) return;
+        atual = escolhido;
+        pintar();
+        if (typeof b.aoMudar === 'function') b.aoMudar(atual);
+      });
+    });
+
+    Object.defineProperty(b, 'value', {
+      get: function () { var op = achou(); return op ? op.valor : ''; },
+      set: function (v) { atual = v; pintar(); }
+    });
+    b.trocarOpcoes = function (novas, novoValor) {
+      lista = novas.slice();
+      if (novoValor !== undefined) atual = novoValor;
+      pintar();
+    };
+    pintar();
+    return b;
+  }
+
+  // ---------- Folha de escolha ----------
+
+  var escolhaAtual = null;
+
+  function abrirEscolha(opcoes, aoFechar) {
+    var fundo = $('escolhaFundo');
+    $('escolhaTitulo').textContent = opcoes.titulo || 'Escolha';
+
+    var lista = $('escolhaLista');
+    lista.textContent = '';
+    opcoes.opcoes.forEach(function (op) {
+      var item = botao('escolha-item', null, function () { responderEscolha(op.valor); });
+      item.setAttribute('aria-selected', op.valor === opcoes.valor ? 'true' : 'false');
+      var marca = no('span', 'marca', op.valor === opcoes.valor ? '✓' : '');
+      var txt = no('span', 'txt');
+      txt.appendChild(no('span', null, op.rotulo));
+      if (op.detalhe) txt.appendChild(no('div', 'extra', op.detalhe));
+      juntar(item, marca, txt);
+      lista.appendChild(item);
+    });
+
+    var rodape = $('escolhaRodape');
+    rodape.textContent = '';
+    if (opcoes.acao) {
+      rodape.appendChild(botao('btn btn-fantasma', opcoes.acao.rotulo, function () {
+        responderEscolha(undefined, opcoes.acao.aoTocar);
+      }));
+    }
+    rodape.appendChild(botao('btn btn-discreto', 'Cancelar', function () { responderEscolha(); }));
+
+    escolhaAtual = { aoFechar: aoFechar, escolhido: undefined, depois: null };
+    fundo.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { fundo.classList.add('aberta'); });
+    empilhar({ tipo: 'escolha' });
+  }
+
+  function responderEscolha(valor, depois) {
+    if (!escolhaAtual) return;
+    escolhaAtual.escolhido = valor;
+    escolhaAtual.depois = depois || null;
+    if (topoEh('escolha')) { voltarNavegacao(); return; }
+    concluirEscolha();
+  }
+
+  function concluirEscolha() {
+    var atual = escolhaAtual;
+    escolhaAtual = null;
+    var fundo = $('escolhaFundo');
+    fundo.classList.remove('aberta');
+    window.setTimeout(function () { if (!escolhaAtual) fundo.hidden = true; }, 220);
+    document.body.style.overflow =
+      folhaAberta || !$('entrada').classList.contains('escondida') ? 'hidden' : '';
+    if (!atual) return;
+    window.setTimeout(function () {
+      if (atual.aoFechar) atual.aoFechar(atual.escolhido);
+      if (atual.depois) atual.depois();
+    }, 0);
   }
 
   function digitosParaCentavos(str) {
     var d = String(str).replace(/\D/g, '').slice(0, 11);
     return d ? parseInt(d, 10) : 0;
+  }
+
+  // Mostra (51) 98501-9255 enquanto a pessoa digita, mas guarda só os números.
+  function entradaTelefone(valor) {
+    var i = no('input', 'entrada');
+    i.type = 'tel';
+    i.id = proximoId();
+    i.inputMode = 'tel';
+    i.autocomplete = 'tel';
+    i.placeholder = '(51) 90000-0000';
+    i.value = telefoneBonito(valor);
+
+    function fim() {
+      var n = i.value.length;
+      if (i.selectionStart === n && i.selectionEnd === n) return;
+      try { i.setSelectionRange(n, n); } catch (e) { /* alguns navegadores recusam */ }
+    }
+
+    i.addEventListener('input', function () {
+      i.value = telefoneBonito(i.value);
+      fim();
+    });
+    ['focus', 'click', 'select', 'keyup'].forEach(function (ev) { i.addEventListener(ev, fim); });
+    return i;
   }
 
   function entradaValor(centavos, grande) {
@@ -5941,22 +7166,52 @@
       var campoAlvo = entradaValor(existente ? existente.alvo : 0, false);
       forma.appendChild(campo('Quanto quer juntar', campoAlvo));
 
+      var opcoesConta = [{ valor: '', rotulo: 'Nenhuma — eu digito o valor' }].concat(
+        estado.contas.map(function (c) {
+          return { valor: c.id, rotulo: c.nome, detalhe: emReais(saldoConta(c.id, null)) };
+        }));
+      var campoConta = entradaSelecao(opcoesConta,
+        existente && existente.contaId ? existente.contaId : '', 'Conta da meta');
+      forma.appendChild(campo('Qual conta guarda esse dinheiro (opcional)', campoConta));
+
       var campoGuardado = entradaValor(existente ? existente.guardado : 0, false);
-      forma.appendChild(campo('Já guardado', campoGuardado));
+      var caixaGuardado = campo('Já guardado', campoGuardado);
+      forma.appendChild(caixaGuardado);
+
+      var atalhos = no('div', 'chips');
+      [5000, 10000, 20000, 50000].forEach(function (c) {
+        atalhos.appendChild(botao('chip', '+ ' + emReais(c), function () {
+          campoGuardado.value = emReais(digitosParaCentavos(campoGuardado.value) + c);
+          pintarMeta();
+        }));
+      });
+      var caixaAtalhos = campo('Adicionar rápido', atalhos);
+      forma.appendChild(caixaAtalhos);
+
+      var painelMeta = no('div', 'linha-nota');
+      painelMeta.style.marginBottom = '14px';
+      forma.appendChild(painelMeta);
+
+      function pintarMeta() {
+        var comConta = !!campoConta.value;
+        caixaGuardado.style.display = comConta ? 'none' : '';
+        caixaAtalhos.style.display = comConta ? 'none' : '';
+        var alvoAgora = digitosParaCentavos(campoAlvo.value);
+        var jaTem = comConta ? Math.max(saldoConta(campoConta.value, null), 0)
+                             : digitosParaCentavos(campoGuardado.value);
+        if (!alvoAgora) { painelMeta.textContent = ''; return; }
+        painelMeta.textContent = emReais(jaTem) + ' de ' + emReais(alvoAgora) + ' — ' +
+          Math.round(pct(jaTem, alvoAgora)) + '%' +
+          (jaTem >= alvoAgora ? ', meta alcançada.' : ', faltam ' + emReais(alvoAgora - jaTem) + '.');
+      }
+      campoConta.aoMudar = pintarMeta;
+      campoAlvo.addEventListener('input', pintarMeta);
+      campoGuardado.addEventListener('input', pintarMeta);
+      pintarMeta();
 
       var campoPrazo = entradaData(existente && existente.prazo ? existente.prazo : '');
       campoPrazo.value = existente ? existente.prazo : '';
       forma.appendChild(campo('Prazo (opcional)', campoPrazo));
-
-      if (existente) {
-        var atalhos = no('div', 'chips');
-        [5000, 10000, 20000, 50000].forEach(function (c) {
-          atalhos.appendChild(botao('chip', '+ ' + emReais(c), function () {
-            campoGuardado.value = emReais(digitosParaCentavos(campoGuardado.value) + c);
-          }));
-        });
-        forma.appendChild(campo('Adicionar rápido', atalhos));
-      }
 
       var acoes = no('div', 'acoes');
       acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
@@ -5970,6 +7225,7 @@
           nome: nome,
           alvo: alvo,
           guardado: digitosParaCentavos(campoGuardado.value),
+          contaId: campoConta.value,
           prazo: ehData(campoPrazo.value) ? campoPrazo.value : ''
         };
 
@@ -6167,27 +7423,86 @@
   function abrirFolhaReserva() {
     abrirFolha('Reserva de emergência', function (folha) {
       var forma = no('div');
-      var meses = estado.perfil.reservaMeses;
+      var p = estado.perfil;
+      var meses = p.reservaMeses;
 
       forma.appendChild(no('p', 'linha-sub',
         'Quantos meses de despesa você quer ter guardados. Usamos a média das suas saídas dos últimos 3 meses.'));
 
       var chips = grupoChips(['3 meses', '6 meses', '12 meses'],
-        meses + ' meses', function (v) { meses = parseInt(v, 10); });
+        meses + ' meses', function (v) { meses = parseInt(v, 10); atualizar(); });
       var wrap = campo(null, chips);
       wrap.style.marginTop = '14px';
       forma.appendChild(wrap);
 
-      var media = mediaDespesas(3);
-      forma.appendChild(no('div', 'linha-nota', 'Média atual de despesas: ' + emReais(media) + ' por mês.'));
+      var opcoesConta = [{ valor: '', rotulo: 'Não tenho uma conta separada' }].concat(
+        estado.contas.map(function (c) {
+          return { valor: c.id, rotulo: c.nome, detalhe: emReais(saldoConta(c.id, null)) };
+        }));
+      var campoConta = entradaSelecao(opcoesConta, p.reservaConta || '', 'Conta da reserva');
+      forma.appendChild(campo('Qual conta guarda a reserva (opcional)', campoConta));
+
+      var campoManual = entradaValor(p.reservaManual, false);
+      var caixaManual = campo('Ou informe o valor à mão', campoManual);
+      forma.appendChild(caixaManual);
+
+      var painel = cartao();
+      forma.appendChild(painel);
+
+      function atualizar() {
+        var media = mediaDespesas(3);
+        var ideal = media * meses;
+        var contaId = campoConta.value;
+        var manual = digitosParaCentavos(campoManual.value);
+        var guardado = contaId ? Math.max(saldoConta(contaId, null), 0)
+                     : manual > 0 ? manual
+                     : Math.max(totalEmContas(null), 0);
+        caixaManual.style.display = contaId ? 'none' : '';
+
+        painel.textContent = '';
+        painel.appendChild(no('div', 'rotulo', 'Reserva ideal'));
+        painel.appendChild(no('div', 'valorao pequeno num ouro', emReais(ideal)));
+        painel.appendChild(no('div', 'linha-nota',
+          meses + ' meses × ' + emReais(media) + ' de despesa média por mês.'));
+
+        var grade = no('div', 'resumo-grade');
+        [['Você tem', guardado, 'verde'], ['Falta', Math.max(ideal - guardado, 0),
+          ideal - guardado > 0 ? 'vermelho' : 'verde']].forEach(function (item) {
+          var d = no('div');
+          d.appendChild(no('div', 'r', item[0]));
+          d.appendChild(no('div', 'v ' + item[2], emReais(item[1])));
+          grade.appendChild(d);
+        });
+        painel.appendChild(grade);
+        painel.appendChild(progresso(guardado, ideal || 1,
+          guardado >= ideal ? 'var(--verde)' : 'var(--ouro)'));
+      }
+      campoConta.aoMudar = atualizar;
+      campoManual.addEventListener('input', atualizar);
+      atualizar();
 
       var acoes = no('div', 'acoes');
       acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
         estado.perfil.reservaMeses = meses;
+        estado.perfil.reservaConta = campoConta.value;
+        estado.perfil.reservaManual = digitosParaCentavos(campoManual.value);
         salvar();
         fecharFolha();
         desenhar();
         avisar('Reserva ajustada para ' + meses + ' meses.');
+      }));
+      acoes.appendChild(botao('btn btn-fantasma', 'Não preciso de reserva', function () {
+        perguntar({
+          titulo: 'Tirar a reserva do Planejar?',
+          texto: 'O cartão some da tela. Para trazer de volta, é em Mais → Preferências.',
+          ok: 'Tirar do Planejar'
+        }, function () {
+          estado.perfil.reservaLigada = false;
+          salvar();
+          fecharFolha();
+          desenhar();
+          avisar('Reserva desligada. Volte por Mais → Preferências.');
+        });
       }));
       forma.appendChild(acoes);
       folha.appendChild(forma);
@@ -6201,35 +7516,115 @@
       var forma = no('div');
       var p = estado.perfil;
 
-      var campoIdade = entradaNumero(p.idadeAtual, '1', 14, 100);
+      var campoIdade = entradaTextoNumero(p.idadeAtual, '30');
       forma.appendChild(campo('Sua idade hoje', campoIdade));
 
-      var campoAlvo = entradaNumero(p.idadeAposentadoria, '1', 15, 110);
+      var campoAlvo = entradaTextoNumero(p.idadeAposentadoria, '60');
       forma.appendChild(campo('Idade em que quer parar', campoAlvo));
+
+      var opcoesConta = [{ valor: '', rotulo: 'Nenhuma — começar do zero' }].concat(
+        estado.contas.map(function (c) {
+          return { valor: c.id, rotulo: c.nome, detalhe: emReais(saldoConta(c.id, null)) };
+        }));
+      var campoConta = entradaSelecao(opcoesConta, p.contaAposentadoria || '', 'Conta da aposentadoria');
+      forma.appendChild(campo('Qual conta guarda esse dinheiro (opcional)', campoConta));
 
       var campoAporte = entradaValor(p.aporteMensal, false);
       forma.appendChild(campo('Quanto pretende aportar por mês', campoAporte));
 
-      var campoTaxa = entradaNumero(p.rendimentoAnual, '0.5', 0, 60);
+      var campoTaxa = entradaTextoNumero(p.rendimentoAnual, '8');
       forma.appendChild(campo('Rendimento esperado ao ano (%)', campoTaxa));
 
-      forma.appendChild(no('div', 'linha-nota',
-        'A projeção parte do seu patrimônio atual de ' + emReais(patrimonio(null)) +
-        ' e aplica juros compostos mês a mês. É uma estimativa, não uma promessa.'));
+      var campoInflacao = entradaTextoNumero(p.inflacaoAnual, '4');
+      forma.appendChild(campo('Inflação anual estimada (%)', campoInflacao));
+
+      var campoRetirada = entradaTextoNumero(p.retiradaAnual, '4');
+      forma.appendChild(campo('Quanto pretende retirar por ano (%)', campoRetirada));
+
+      var campoMeta = entradaValor(p.metaPatrimonio, false);
+      forma.appendChild(campo('Meta de patrimônio (opcional)', campoMeta));
+
+      var painel = cartao();
+      forma.appendChild(painel);
+
+      // A conta roda com o que está escrito agora, sem precisar salvar antes.
+      function simular() {
+        var guardado = estadoAtualDoPerfil();
+        var antes = {};
+        Object.keys(guardado).forEach(function (k) { antes[k] = p[k]; p[k] = guardado[k]; });
+        var a = calculoAposentadoria();
+        Object.keys(antes).forEach(function (k) { p[k] = antes[k]; });
+        return a;
+      }
+
+      function estadoAtualDoPerfil() {
+        var idade = Math.min(Math.max(Math.round(comoNumero(campoIdade.value, 30)), 14), 100);
+        var alvo = Math.min(Math.max(Math.round(comoNumero(campoAlvo.value, 60)), 15), 110);
+        return {
+          idadeAtual: idade,
+          idadeAposentadoria: alvo,
+          contaAposentadoria: campoConta.value,
+          aporteMensal: digitosParaCentavos(campoAporte.value),
+          rendimentoAnual: Math.min(Math.max(comoNumero(campoTaxa.value, 8), 0), 60),
+          inflacaoAnual: Math.min(Math.max(comoNumero(campoInflacao.value, 4), 0), 40),
+          retiradaAnual: Math.min(Math.max(comoNumero(campoRetirada.value, 4), 0.1), 20),
+          metaPatrimonio: digitosParaCentavos(campoMeta.value)
+        };
+      }
+
+      function pintar() {
+        var a = simular();
+        painel.textContent = '';
+        painel.appendChild(no('div', 'rotulo',
+          'Projeção aos ' + Math.round(comoNumero(campoAlvo.value, 60)) + ' anos'));
+        painel.appendChild(no('div', 'valorao pequeno num ouro', emReais(a.bruto)));
+
+        [
+          ['Capital de partida', emReais(a.capital)],
+          ['Total investido', emReais(a.investido)],
+          ['Total em juros', emReais(a.juros)],
+          ['Juros no montante', numeroBr(a.jurosPct) + '%'],
+          ['Multiplicador', numeroBr(Math.round(a.multiplicador * 10) / 10) + 'x'],
+          ['Taxa mensal', numeroBr(a.taxaMes) + '%'],
+          ['Taxa real (sem inflação)', numeroBr(a.taxaRealAno) + '% ao ano'],
+          ['Vale hoje', emReais(a.real)],
+          ['Renda passiva', emReais(a.rendaPassiva) + ' por mês']
+        ].forEach(function (par) {
+          var l = no('div', 'parcela-linha');
+          juntar(l, no('span', 'q', par[0]), no('span', 'v num', par[1]));
+          painel.appendChild(l);
+        });
+
+        if (a.meta > 0) {
+          var caixaMeta = no('div');
+          caixaMeta.style.marginTop = '12px';
+          var topoM = no('div', 'legenda-item');
+          topoM.style.marginBottom = '5px';
+          juntar(topoM, no('span', 'nome', 'Meta de patrimônio'),
+            no('span', 'pct num', Math.round(a.metaPct) + '%'));
+          caixaMeta.appendChild(topoM);
+          caixaMeta.appendChild(progresso(a.bruto, a.meta,
+            a.metaPct >= 100 ? 'var(--verde)' : 'var(--ouro)'));
+          painel.appendChild(caixaMeta);
+        }
+
+        painel.appendChild(no('div', 'linha-nota',
+          'Juros compostos mês a mês sobre ' + a.anos + ' anos. É uma estimativa, não uma promessa.'));
+      }
+
+      [campoIdade, campoAlvo, campoAporte, campoTaxa, campoInflacao, campoRetirada, campoMeta]
+        .forEach(function (c) { c.addEventListener('input', pintar); });
+      campoConta.aoMudar = pintar;
+      pintar();
 
       var acoes = no('div', 'acoes');
       acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
-        var idade = parseInt(campoIdade.value, 10);
-        var alvo = parseInt(campoAlvo.value, 10);
-        if (!isFinite(idade) || !isFinite(alvo)) { mostrarErro(forma, 'Preencha as duas idades.'); return; }
-        if (alvo <= idade) { mostrarErro(forma, 'A idade de parar precisa ser maior que a idade de hoje.'); return; }
-
-        p.idadeAtual = Math.min(Math.max(idade, 14), 100);
-        p.idadeAposentadoria = Math.min(Math.max(alvo, 15), 110);
-        p.aporteMensal = digitosParaCentavos(campoAporte.value);
-        var taxa = Number(String(campoTaxa.value).replace(',', '.'));
-        p.rendimentoAnual = isFinite(taxa) ? Math.min(Math.max(taxa, 0), 60) : 8;
-
+        var novo = estadoAtualDoPerfil();
+        if (novo.idadeAposentadoria <= novo.idadeAtual) {
+          mostrarErro(forma, 'A idade de parar precisa ser maior que a idade de hoje.');
+          return;
+        }
+        Object.keys(novo).forEach(function (k) { estado.perfil[k] = novo[k]; });
         salvar();
         fecharFolha();
         desenhar();
@@ -6249,9 +7644,24 @@
       var campoNome = entradaTexto(estado.perfil.nome, 'Como quer ser chamado', 40);
       forma.appendChild(campo('Seu nome', campoNome));
 
+      var reserva = estado.perfil.reservaLigada !== false;
+      var marcaReserva = botao('lembrar', null, function () {
+        reserva = !reserva;
+        marcaReserva.setAttribute('aria-pressed', reserva ? 'true' : 'false');
+        marcaReserva.querySelector('.caixinha').textContent = reserva ? '✓' : '';
+      });
+      marcaReserva.setAttribute('aria-pressed', reserva ? 'true' : 'false');
+      marcaReserva.style.margin = '4px 0 6px';
+      marcaReserva.appendChild(no('span', 'caixinha', reserva ? '✓' : ''));
+      marcaReserva.appendChild(no('span', null, 'Mostrar a reserva de emergência'));
+      forma.appendChild(marcaReserva);
+      forma.appendChild(no('div', 'linha-nota',
+        'Desmarcado, o cartão da reserva some da tela Planejar. Nada do que você já ajustou se perde.'));
+
       var acoes = no('div', 'acoes');
       acoes.appendChild(botao('btn btn-ouro', 'Salvar', function () {
         estado.perfil.nome = campoNome.value.trim().slice(0, 40);
+        estado.perfil.reservaLigada = reserva;
         salvar();
         fecharFolha();
         desenhar();

@@ -34,6 +34,8 @@
     --ciano: #22D3EE;
     --raio: 18px;
     --baixo: env(safe-area-inset-bottom, 0px);
+    /* Quanto da tela está escondido embaixo pela barra do navegador. */
+    --fundo-oculto: 0px;
     --alto: env(safe-area-inset-top, 0px);
     --nav: 62px;
   }
@@ -84,7 +86,7 @@
   .tela { display: none; padding: 0 16px; }
   .tela.ativa { display: block; }
 
-  main { padding-bottom: calc(var(--nav) + var(--baixo) + 92px); }
+  main { padding-bottom: calc(var(--nav) + var(--baixo) + 92px + var(--fundo-oculto)); }
 
   .cabecalho {
     display: flex;
@@ -319,7 +321,8 @@
 
   nav {
     position: fixed;
-    left: 0; right: 0; bottom: 0;
+    left: 0; right: 0;
+    bottom: var(--fundo-oculto);
     height: calc(var(--nav) + var(--baixo));
     padding-bottom: var(--baixo);
     display: flex;
@@ -347,7 +350,7 @@
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
-    bottom: calc(var(--nav) + var(--baixo) + 16px);
+    bottom: calc(var(--nav) + var(--baixo) + 16px + var(--fundo-oculto));
     width: 58px;
     height: 58px;
     border-radius: 50%;
@@ -524,6 +527,25 @@
   .dialogo .btn-discreto { color: var(--suave); font-weight: 600; padding: 12px; }
   .dialogo .btn-discreto:active { background: var(--cartao-2); }
 
+  .pilula-periodo {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 0 auto;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: var(--cartao);
+    border: 1px solid var(--borda);
+    color: var(--texto);
+    font-size: 13px;
+    font-weight: 600;
+    max-width: 62%;
+  }
+  .pilula-periodo:active { background: var(--cartao-2); }
+  .pilula-periodo svg { width: 15px; height: 15px; color: var(--ouro); flex: 0 0 auto; }
+  .pilula-periodo > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pilula-periodo .seta { color: var(--suave); font-size: 10px; flex: 0 0 auto; }
+
   .linha-dupla-campo { display: flex; align-items: center; gap: 8px; }
   .linha-dupla-campo > .entrada { flex: 1 1 auto; min-width: 0; }
   .linha-dupla-campo > .linha-acao {
@@ -686,7 +708,7 @@
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
-    bottom: calc(var(--nav) + var(--baixo) + 84px);
+    bottom: calc(var(--nav) + var(--baixo) + 84px + var(--fundo-oculto));
     max-width: calc(100% - 32px);
     padding: 11px 18px;
     background: #16130D;
@@ -1293,13 +1315,25 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.4.0';
+  var VERSAO = '3.4.1';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.4.1',
+      data: '2026-09-06',
+      itens: [
+        'A barra de baixo não é mais cortada quando a barra do navegador aparece.',
+        'Parcela em aberto agora abre com o que fazer: registrar o pagamento, mudar valor e vencimento, ou excluir.',
+        'Botão para apagar de uma vez todas as parcelas ainda em aberto.',
+        'No Início, um seletor de período ao lado da saudação: mês atual, últimos 3 meses, último ano ou as datas que você escolher.',
+        'O período escolhido vale também em Transações.',
+        'O cartão de backup saiu do Empreendedor: ele já existe em Mais.'
+      ]
+    },
     {
       versao: '3.4.0',
       data: '2026-09-06',
@@ -3234,6 +3268,7 @@
     mais: 'M12 5v14M5 12h14',
     lupa: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.2 16.2 21 21',
     lapis: 'M4.5 19.5h4L19 9a2.12 2.12 0 0 0-3-3L5.5 16.5v3zM14.5 6.5l3 3',
+    calendario: 'M4.5 6.5h15a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1zM8 3.5v5M16 3.5v5M3.5 11h17',
     alerta: 'M12 8.5v5M12 17h.01M10.3 3.9 2.5 17.4A2 2 0 0 0 4.2 20.5h15.6a2 2 0 0 0 1.7-3.1L13.7 3.9a2 2 0 0 0-3.4 0z',
     saindo: 'M15 12H3.5M7 8l-4 4 4 4M13 3.5h5.5a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H13',
     extrato: 'M6 3.5h9L19.5 8v12.5a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1zM14.5 3.5V8h5M8.5 12.5h7M8.5 16h4',
@@ -4140,7 +4175,10 @@
   var mesAtivo = { ano: agora.getFullYear(), mes: agora.getMonth() };
   var telaAtiva = 'inicio';
   var filtroTransacoes = 'todas';
-  var periodoTransacoes = 'mes';   // mes | tres | ano
+
+  // mes: o mês do seletor; tres e ano: contados a partir de hoje;
+  // escolhido: as duas datas que a pessoa marcou.
+  var periodo = { tipo: 'mes', de: '', ate: '' };
   var buscaTransacoes = '';
   var abaInvestimentos = 'alocacao';
   var abaInicio = 'geral';
@@ -4269,6 +4307,11 @@
     if (subtitulo) esquerda.appendChild(no('div', 'sub', subtitulo));
     c.appendChild(esquerda);
 
+    if (comMes === 'periodo') {
+      c.appendChild(seletorDePeriodo(function () { desenhar(); }));
+      return c;
+    }
+
     if (comMes) {
       var sel = no('div', 'mes-seletor');
       var anterior = botao(null, '‹', function () { mudarMes(-1); });
@@ -4285,6 +4328,7 @@
   function mudarMes(passo) {
     var d = new Date(mesAtivo.ano, mesAtivo.mes + passo, 1);
     mesAtivo = { ano: d.getFullYear(), mes: d.getMonth() };
+    periodo.tipo = 'mes';
     desenhar();
   }
 
@@ -4437,7 +4481,7 @@
     tela.appendChild(cabecalho(
       saudacao() + (nome ? ', ' + nome : ''),
       diaTexto + ', ' + hoje.getDate() + ' de ' + MESES[hoje.getMonth()],
-      false
+      'periodo'
     ));
 
     tela.appendChild(segmentos([
@@ -4466,22 +4510,23 @@
     cPat.appendChild(blocoGrafico(seriePatrimonio(30), '#E9B44C'));
     tela.appendChild(cPat);
 
-    // KPIs do mês
-    var t = totaisDoMes(mesAtivo.ano, mesAtivo.mes);
-    var ant = mesAnteriorAo(mesAtivo.ano, mesAtivo.mes);
-    var tAnt = totaisDoMes(ant.ano, ant.mes);
+    // Números do período escolhido
+    var faixa = faixaDoPeriodo();
+    var t = totaisNaFaixa(faixa);
+    var tAnt = totaisNaFaixa(faixaAnterior());
 
     var kpis = no('div', 'kpis');
     kpis.appendChild(blocoKpi('Receitas', t.entradas, tAnt.entradas, 'verde'));
     kpis.appendChild(blocoKpi('Despesas', t.saidas, tAnt.saidas, 'vermelho'));
-    kpis.appendChild(blocoKpi('Investido', totalInvestido(null), totalInvestido(fimMesPassado), 'ouro'));
+    kpis.appendChild(blocoKpi('Investido', totalInvestido(faixa.ate < hojeTexto() ? faixa.ate : null),
+      totalInvestido(faixaAnterior().ate), 'ouro'));
     tela.appendChild(kpis);
 
     // Fluxo de caixa
     var cFluxo = cartao();
     cFluxo.appendChild(topoDeCartao('Fluxo de caixa', 'Ver todas', function () { irPara('transacoes'); }));
     cFluxo.appendChild(no('div', 'valorao pequeno num ' + (t.saldo >= 0 ? 'verde' : 'vermelho'), emReais(t.saldo)));
-    cFluxo.appendChild(no('div', 'linha-nota', 'líquido em ' + MESES[mesAtivo.mes]));
+    cFluxo.appendChild(no('div', 'linha-nota', 'líquido ' + faixa.rotulo));
 
     var barra = no('div', 'barra-dupla');
     barra.style.marginTop = '14px';
@@ -4501,11 +4546,11 @@
     tela.appendChild(cFluxo);
 
     // Distribuição de gastos
-    var gastos = gastosPorCategoria(mesAtivo.ano, mesAtivo.mes);
+    var gastos = gastosNaFaixa(faixa);
     var cGastos = cartao();
     cGastos.appendChild(topoDeCartao('Distribuição de gastos', 'Relatório', function () { abrirRelatorio('fluxo'); }));
     if (!gastos.total) {
-      cGastos.appendChild(estadoVazio('Sem gastos em ' + MESES[mesAtivo.mes], 'Os lançamentos de saída aparecem aqui divididos por categoria.'));
+      cGastos.appendChild(estadoVazio('Sem gastos ' + faixa.rotulo, 'Os lançamentos de saída aparecem aqui divididos por categoria.'));
     } else {
       var seg = comCores(gastos.lista.slice(0, 6));
       var outros = gastos.lista.slice(6).reduce(function (s, c) { return s + c.valor; }, 0);
@@ -4661,16 +4706,6 @@
     }
     tela.appendChild(cClientes);
 
-    if (estado.clientes.length) {
-      var cBackup = cartao();
-      cBackup.appendChild(topoDeCartao('Guardar os dados', null));
-      cBackup.appendChild(no('p', 'linha-sub',
-        'Baixe um arquivo com clientes, registros, parcelas e pagamentos. Serve para guardar fora do aparelho e para restaurar depois.'));
-      var bBackup = botao('btn btn-fantasma', 'Baixar backup', function () { fazerBackup(); });
-      bBackup.style.marginTop = '12px';
-      cBackup.appendChild(bBackup);
-      tela.appendChild(cBackup);
-    }
   }
 
   // O que venceu e ainda não foi pago, com o atalho para o WhatsApp.
@@ -4926,7 +4961,7 @@
             var servicoP = p.servicoId ? achar(estado.servicos, p.servicoId) : null;
             var linha = botao('linha' + (vencida ? ' atrasada' : ''), null, function () {
               if (paga) { abrirFolhaPagamento(id, p.pagamentoId); return; }
-              abrirFolhaPagamento(id, null, p.id);
+              abrirFolhaParcela(id, p.id);
             });
             juntar(linha,
               selo(paga ? '#3DDC84' : vencida ? '#FF6B6B' : '#E9B44C', paga ? '✓' : String(p.numero)),
@@ -4967,6 +5002,26 @@
         acoes.appendChild(botao('btn btn-ouro', '+ Nova venda ou serviço', function () { abrirFolhaServico(id, null); }));
       } else if (abaFicha === 'parcelas') {
         acoes.appendChild(botao('btn btn-ouro', '+ Combinar parcelas', function () { abrirFolhaParcelamento(id, ''); }));
+        var emAberto = parcelasDoCliente(id).filter(function (p) { return !parcelaPaga(p); });
+        if (emAberto.length) {
+          acoes.appendChild(botao('btn btn-perigo', 'Apagar as ' + emAberto.length + ' parcelas em aberto', function () {
+            perguntar({
+              titulo: 'Apagar as parcelas em aberto?',
+              texto: 'Saem as ' + emAberto.length + ' parcelas que ainda não foram pagas, somando ' +
+                emReais(emAberto.reduce(function (soma, p) { return soma + p.valor; }, 0)) +
+                '. As já pagas continuam. Os registros e os pagamentos não são tocados.',
+              ok: 'Apagar parcelas', tom: 'perigo'
+            }, function () {
+              emAberto.forEach(function (p) { marcarExcluido('parcelas', p.id); });
+              var fora = {};
+              emAberto.forEach(function (p) { fora[p.id] = true; });
+              estado.parcelas = estado.parcelas.filter(function (p) { return !fora[p.id]; });
+              salvar();
+              montarFichaCliente(id);
+              avisar('Parcelas apagadas.');
+            });
+          }));
+        }
       } else {
         acoes.appendChild(botao('btn btn-ouro', '+ Registrar pagamento', function () { abrirFolhaPagamento(id, null); }));
       }
@@ -5372,6 +5427,74 @@
     });
   }
 
+  // O que fazer com uma parcela que ainda está em aberto.
+  function abrirFolhaParcela(clienteId, parcelaId) {
+    var parcela = achar(estado.parcelas, parcelaId);
+    if (!parcela) return;
+    var servico = parcela.servicoId ? achar(estado.servicos, parcela.servicoId) : null;
+    var servicos = servicosDoCliente(clienteId);
+    empilhar({ tipo: 'aba', voltar: function () { montarFichaCliente(clienteId); } });
+
+    abrirFolha('Parcela ' + parcela.numero + ' de ' + parcela.total, function (folha) {
+      var forma = no('div');
+
+      var campoValorEl = entradaValor(parcela.valor, true);
+      campoValorEl.style.color = 'var(--ouro)';
+      forma.appendChild(campo('Valor da parcela', campoValorEl));
+
+      var campoData = entradaData(parcela.vencimento);
+      forma.appendChild(campo('Vence em', campoData));
+
+      var opcoesServico = [{ valor: '', rotulo: 'Sem registro específico' }].concat(
+        servicos.map(function (sv) {
+          return { valor: sv.id, rotulo: sv.nome, detalhe: (sv.tipo || 'Serviço') + ' · ' + emReais(sv.valor) };
+        }));
+      var campoServico = entradaSelecao(opcoesServico, parcela.servicoId || '', 'Referente a');
+      forma.appendChild(campo('Referente a', campoServico));
+
+      if (parcela.vencimento < hojeTexto()) {
+        forma.appendChild(no('div', 'linha-nota vermelho',
+          'Esta parcela venceu em ' + dataBr(parcela.vencimento) + '.'));
+      }
+      if (servico) {
+        forma.appendChild(no('div', 'linha-nota',
+          'Faz parte de ' + parcela.total + ' parcelas de ' + servico.nome + '.'));
+      }
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Registrar pagamento', function () {
+        voltarNavegacao();
+        setTimeout(function () { abrirFolhaPagamento(clienteId, null, parcelaId); }, 250);
+      }));
+      acoes.appendChild(botao('btn btn-fantasma', 'Salvar alterações', function () {
+        var valor = digitosParaCentavos(campoValorEl.value);
+        if (valor <= 0) { mostrarErro(forma, 'Informe o valor da parcela.'); return; }
+        if (!ehData(campoData.value)) { mostrarErro(forma, 'Escolha uma data válida.'); return; }
+        parcela.valor = valor;
+        parcela.vencimento = campoData.value;
+        parcela.servicoId = campoServico.value;
+        salvar();
+        voltarNavegacao();
+        avisar('Parcela atualizada.');
+      }));
+      acoes.appendChild(botao('btn btn-perigo', 'Excluir esta parcela', function () {
+        perguntar({
+          titulo: 'Excluir a parcela ' + parcela.numero + ' de ' + parcela.total + '?',
+          texto: 'As outras parcelas continuam como estão.',
+          ok: 'Excluir parcela', tom: 'perigo'
+        }, function () {
+          marcarExcluido('parcelas', parcela.id);
+          estado.parcelas = estado.parcelas.filter(function (p) { return p.id !== parcela.id; });
+          salvar();
+          voltarNavegacao();
+          avisar('Parcela excluída.');
+        });
+      }));
+      forma.appendChild(acoes);
+      folha.appendChild(forma);
+    });
+  }
+
   function abrirFolhaPagamento(clienteId, pagamentoId, parcelaId) {
     var existente = pagamentoId ? achar(estado.pagamentos, pagamentoId) : null;
     var parcela = parcelaId ? achar(estado.parcelas, parcelaId) : null;
@@ -5539,7 +5662,7 @@
   function desenharTransacoes() {
     var tela = $('telaTransacoes');
     tela.textContent = '';
-    tela.appendChild(cabecalho('Transações', null, true));
+    tela.appendChild(cabecalho('Transações', null, periodo.tipo === 'mes' ? true : 'periodo'));
 
     var busca = no('div', 'busca');
     var lupa = no('span', 'lupa');
@@ -5559,8 +5682,11 @@
     tela.appendChild(segmentos([
       { valor: 'mes', rotulo: nomeDoPeriodo('mes') },
       { valor: 'tres', rotulo: 'Últimos 3 meses' },
-      { valor: 'ano', rotulo: 'Último ano' }
-    ], periodoTransacoes, function (v) { periodoTransacoes = v; desenharTransacoes(); }));
+      { valor: 'ano', rotulo: 'Último ano' },
+      { valor: 'escolhido', rotulo: 'Escolher datas' }
+    ], periodo.tipo, function (v) {
+      trocarPeriodo(v, function () { desenharTransacoes(); });
+    }));
 
     tela.appendChild(segmentos([
       { valor: 'todas', rotulo: 'Todas' },
@@ -5575,39 +5701,167 @@
     desenharListaTransacoes();
   }
 
-  // O trecho de tempo que a lista cobre. O mês escolhido é o de sempre;
-  // os outros dois olham para trás a partir de hoje.
   function nomeDoPeriodo(qual) {
     if (qual === 'tres') return '3 meses';
     if (qual === 'ano') return '12 meses';
+    if (qual === 'escolhido') return 'Escolhido';
     var mesmoAno = mesAtivo.ano === new Date().getFullYear();
     return MESES_CURTO[mesAtivo.mes] + (mesmoAno ? '' : '/' + String(mesAtivo.ano).slice(2));
   }
 
+  // A janela de tempo que as telas estão olhando.
   function faixaDoPeriodo() {
-    if (periodoTransacoes === 'mes') {
-      var pre = prefixoMes(mesAtivo.ano, mesAtivo.mes);
+    if (periodo.tipo === 'escolhido' && ehData(periodo.de) && ehData(periodo.ate)) {
       return {
-        de: pre + '-01',
-        ate: ultimoDiaDoMes(mesAtivo.ano, mesAtivo.mes),
-        rotulo: MESES[mesAtivo.mes] + ' de ' + mesAtivo.ano
+        de: periodo.de, ate: periodo.ate,
+        rotulo: 'de ' + dataBr(periodo.de) + ' a ' + dataBr(periodo.ate),
+        curto: dataCurta(periodo.de) + ' a ' + dataCurta(periodo.ate)
       };
     }
-    var hoje = new Date();
-    var meses = periodoTransacoes === 'tres' ? 3 : 12;
-    var inicio = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1), 1);
+    if (periodo.tipo === 'tres' || periodo.tipo === 'ano') {
+      var meses = periodo.tipo === 'tres' ? 3 : 12;
+      var hoje = new Date();
+      var inicio = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1), 1);
+      return {
+        de: deData(inicio), ate: hojeTexto(),
+        rotulo: meses === 3 ? 'nos últimos 3 meses' : 'nos últimos 12 meses',
+        curto: meses === 3 ? 'Últimos 3 meses' : 'Último ano'
+      };
+    }
     return {
-      de: deData(inicio),
-      ate: hojeTexto(),
-      rotulo: meses === 3 ? 'nos últimos 3 meses' : 'nos últimos 12 meses'
+      de: prefixoMes(mesAtivo.ano, mesAtivo.mes) + '-01',
+      ate: ultimoDiaDoMes(mesAtivo.ano, mesAtivo.mes),
+      rotulo: 'em ' + MESES[mesAtivo.mes],
+      curto: MESES[mesAtivo.mes].charAt(0).toUpperCase() + MESES[mesAtivo.mes].slice(1) +
+        (mesAtivo.ano === new Date().getFullYear() ? '' : ' ' + mesAtivo.ano)
     };
   }
 
-  function lancamentosDoPeriodo() {
-    var faixa = faixaDoPeriodo();
+  // A janela de mesmo tamanho logo antes, para comparar.
+  function faixaAnterior() {
+    if (periodo.tipo === 'mes') {
+      var a = mesAnteriorAo(mesAtivo.ano, mesAtivo.mes);
+      return { de: prefixoMes(a.ano, a.mes) + '-01', ate: ultimoDiaDoMes(a.ano, a.mes) };
+    }
+    var f = faixaDoPeriodo();
+    var dias = Math.round((comoData(f.ate) - comoData(f.de)) / 86400000) + 1;
+    return { de: somaDias(f.de, -dias), ate: somaDias(f.de, -1) };
+  }
+
+  function lancamentosNaFaixa(faixa) {
+    var f = faixa || faixaDoPeriodo();
     return estado.lancamentos.filter(function (l) {
-      return l.data >= faixa.de && l.data <= faixa.ate;
+      return l.data >= f.de && l.data <= f.ate;
     });
+  }
+
+  function lancamentosDoPeriodo() { return lancamentosNaFaixa(); }
+
+  function totaisNaFaixa(faixa) {
+    var entradas = 0, saidas = 0;
+    lancamentosNaFaixa(faixa).forEach(function (l) {
+      if (l.tipo === 'entrada') entradas += l.valor;
+      else if (l.tipo === 'saida') saidas += l.valor;
+    });
+    return { entradas: entradas, saidas: saidas, saldo: entradas - saidas };
+  }
+
+  function gastosNaFaixa(faixa) {
+    var mapa = {};
+    var total = 0;
+    lancamentosNaFaixa(faixa).forEach(function (l) {
+      if (l.tipo !== 'saida') return;
+      mapa[l.categoria] = (mapa[l.categoria] || 0) + l.valor;
+      total += l.valor;
+    });
+    var lista = Object.keys(mapa).map(function (nome) {
+      return { nome: nome, valor: mapa[nome] };
+    }).sort(function (a, b) { return b.valor - a.valor; });
+    return { lista: lista, total: total };
+  }
+
+  // ---------- Escolher o período ----------
+
+  function trocarPeriodo(tipo, aoTerminar, doSeletor) {
+    if (tipo === 'escolhido') { abrirFolhaPeriodo(aoTerminar); return; }
+    // Escolher "mês atual" na lista traz de volta o mês de hoje; as setas
+    // do cabeçalho continuam levando para os outros meses.
+    if (tipo === 'mes' && doSeletor) {
+      var hoje = new Date();
+      mesAtivo = { ano: hoje.getFullYear(), mes: hoje.getMonth() };
+    }
+    periodo.tipo = tipo;
+    if (aoTerminar) aoTerminar();
+  }
+
+  function abrirFolhaPeriodo(aoTerminar) {
+    var f = faixaDoPeriodo();
+    abrirFolha('Período', function (folha) {
+      var forma = no('div');
+      forma.appendChild(no('p', 'linha-sub', 'Escolha as duas pontas do período que quer ver.'));
+
+      var campoDe = entradaData(periodo.de || f.de);
+      forma.appendChild(campo('Começa em', campoDe));
+      var campoAte = entradaData(periodo.ate || f.ate);
+      forma.appendChild(campo('Termina em', campoAte));
+
+      var nota = no('div', 'linha-nota');
+      forma.appendChild(nota);
+      function medir() {
+        if (!ehData(campoDe.value) || !ehData(campoAte.value)) { nota.textContent = ''; return; }
+        if (campoDe.value > campoAte.value) { nota.textContent = 'A data de início vem antes da de fim.'; return; }
+        var dias = Math.round((comoData(campoAte.value) - comoData(campoDe.value)) / 86400000) + 1;
+        var quantos = estado.lancamentos.filter(function (l) {
+          return l.data >= campoDe.value && l.data <= campoAte.value;
+        }).length;
+        nota.textContent = dias + ' dia(s), com ' + quantos + ' lançamento(s).';
+      }
+      campoDe.addEventListener('change', medir);
+      campoAte.addEventListener('change', medir);
+      medir();
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Ver este período', function () {
+        if (!ehData(campoDe.value) || !ehData(campoAte.value)) {
+          mostrarErro(forma, 'Escolha as duas datas.'); return;
+        }
+        if (campoDe.value > campoAte.value) {
+          mostrarErro(forma, 'A data de início precisa vir antes da de fim.'); return;
+        }
+        periodo.tipo = 'escolhido';
+        periodo.de = campoDe.value;
+        periodo.ate = campoAte.value;
+        fecharFolha();
+        setTimeout(function () { if (aoTerminar) aoTerminar(); else desenhar(); }, 250);
+      }));
+      forma.appendChild(acoes);
+      folha.appendChild(forma);
+    });
+  }
+
+  // A pílula que abre a lista de períodos.
+  function seletorDePeriodo(aoTrocar) {
+    var b = botao('pilula-periodo', null, function () {
+      abrirEscolha({
+        titulo: 'Período',
+        valor: periodo.tipo,
+        opcoes: [
+          { valor: 'mes', rotulo: 'Mês atual',
+            detalhe: MESES[new Date().getMonth()] + ' de ' + new Date().getFullYear() },
+          { valor: 'tres', rotulo: 'Últimos 3 meses' },
+          { valor: 'ano', rotulo: 'Último ano' },
+          { valor: 'escolhido', rotulo: 'Escolher as datas',
+            detalhe: periodo.tipo === 'escolhido' ? faixaDoPeriodo().curto : 'início e fim' }
+        ]
+      }, function (escolhido) {
+        if (escolhido == null) return;
+        trocarPeriodo(escolhido, aoTrocar, true);
+      });
+    });
+    b.appendChild(icone('calendario'));
+    b.appendChild(no('span', null, faixaDoPeriodo().curto));
+    b.appendChild(no('span', 'seta', '▾'));
+    return b;
   }
 
   function desenharListaTransacoes() {
@@ -5628,8 +5882,7 @@
       c.appendChild(estadoVazio(
         termo ? 'Nada encontrado' : 'Nenhum lançamento',
         termo ? 'Tente outro termo de busca.'
-              : 'Toque no + para registrar o primeiro movimento ' +
-                (periodoTransacoes === 'mes' ? 'de ' + MESES[mesAtivo.mes] : faixa.rotulo) + '.'
+              : 'Toque no + para registrar o primeiro movimento ' + faixa.rotulo + '.'
       ));
       alvo.appendChild(c);
       return;
@@ -5653,12 +5906,8 @@
       alvo.appendChild(cartaoDia);
     });
 
-    var entradas = 0, saidas = 0;
-    lancamentosDoPeriodo().forEach(function (l) {
-      if (l.tipo === 'entrada') entradas += l.valor;
-      else if (l.tipo === 'saida') saidas += l.valor;
-    });
-    var saldo = entradas - saidas;
+    var totais = totaisNaFaixa(faixa);
+    var entradas = totais.entradas, saidas = totais.saidas, saldo = totais.saldo;
 
     var resumo = cartao();
     resumo.style.marginTop = '16px';
@@ -5679,9 +5928,7 @@
       gradeResumo.appendChild(d);
     });
     resumo.appendChild(gradeResumo);
-    resumo.appendChild(no('div', 'linha-nota',
-      periodoTransacoes === 'mes' ? MESES[mesAtivo.mes] + ' de ' + mesAtivo.ano
-        : 'De ' + dataBr(faixa.de) + ' a ' + dataBr(faixa.ate) + '.'));
+    resumo.appendChild(no('div', 'linha-nota', 'De ' + dataBr(faixa.de) + ' a ' + dataBr(faixa.ate) + '.'));
     alvo.appendChild(resumo);
   }
 
@@ -8179,6 +8426,28 @@
     if ($('relatorio').classList.contains('aberto')) fecharRelatorio();
     else if (folhaAberta) fecharFolha();
   });
+
+  // No celular a barra de endereço do navegador entra e sai, e a área
+  // realmente visível encolhe. Sem isso, a navegação de baixo fica
+  // pendurada fora da tela e some pela metade.
+  function acompanharAreaVisivel() {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    var ultimo = -1;
+    function ajustar() {
+      var oculto = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+      // Com o teclado aberto o vão é enorme; aí a barra fica onde está.
+      if (oculto > 220) oculto = 0;
+      if (oculto === ultimo) return;
+      ultimo = oculto;
+      document.documentElement.style.setProperty('--fundo-oculto', oculto + 'px');
+    }
+    vv.addEventListener('resize', ajustar);
+    vv.addEventListener('scroll', ajustar);
+    window.addEventListener('orientationchange', function () { setTimeout(ajustar, 300); });
+    ajustar();
+  }
+  acompanharAreaVisivel();
 
   window.addEventListener('popstate', aoVoltar);
 

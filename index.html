@@ -669,6 +669,8 @@
   .escolha-item[aria-selected="true"] { color: var(--ouro); font-weight: 600; }
   .escolha-item .txt { flex: 1 1 auto; min-width: 0; }
   .escolha-item .extra { color: var(--suave); font-size: 13px; font-weight: 400; }
+  .area-colar { min-height: 170px; resize: vertical; font-size: 13px; line-height: 1.45;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
   .selo-marca { font-weight: 800; letter-spacing: -.3px; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
   .cabeca-cartao { display: flex; align-items: center; gap: 11px; margin-bottom: 14px; }
   .cabeca-banco { display: flex; align-items: center; gap: 11px; padding: 12px;
@@ -1408,13 +1410,22 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.9.1';
+  var VERSAO = '3.9.2';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.9.2',
+      data: '2026-09-07',
+      itens: [
+        'Novo "Colar o extrato" em Mais: copie o texto do extrato ou da fatura e cole. Não depende de arquivo nenhum, então funciona mesmo quando o celular trava a leitura.',
+        'A leitura de arquivo ganhou uma quarta tentativa, lendo em pedaços.',
+        'Quando o Android barra o arquivo, o aviso agora leva direto para o caminho que funciona.'
+      ]
+    },
     {
       versao: '3.9.1',
       data: '2026-09-07',
@@ -7863,6 +7874,7 @@
       ['💾', 'Fazer backup (JSON)', 'Salva tudo em um arquivo', fazerBackup],
       ['📊', 'Exportar CSV', 'Lançamentos para planilha', exportarCsv],
       ['🏦', 'Importar extrato do banco', 'Extrato ou fatura: PDF, Excel, OFX ou CSV', 'arquivoExtrato'],
+      ['📋', 'Colar o extrato', 'Quando o celular não deixa abrir o arquivo', abrirColarExtrato],
       ['↺', 'Restaurar backup', 'Substitui os dados atuais', 'arquivoRestaurar'],
       ['⚙', 'Preferências', 'Seu nome e o cálculo da reserva', abrirFolhaPreferencias]
     ].forEach(function (o) {
@@ -11559,6 +11571,46 @@
     $('arquivoExtrato').click();
   }
 
+  // Caminho que não depende de arquivo nenhum: a pessoa abre o extrato,
+  // copia o texto e cola aqui. Serve quando o Android não deixa ler o
+  // arquivo, e também para quem copia direto do site do banco.
+  function abrirColarExtrato() {
+    empilhar({ tipo: 'aba', voltar: function () {} });
+    abrirFolha('Colar o extrato', function (folha) {
+      var forma = no('div');
+      forma.appendChild(no('p', 'ajuda',
+        'Abra o extrato ou a fatura, segure em cima do texto, escolha "Selecionar tudo" e ' +
+        'copie. Depois cole aqui embaixo. Serve também para o texto copiado do site do banco.'));
+
+      var area = no('textarea', 'entrada area-colar');
+      area.id = proximoId();
+      area.rows = 10;
+      area.placeholder = '06/09  Pix enviado para POSTO ...  -R$ 246,02';
+      area.autocomplete = 'off';
+      area.spellcheck = false;
+      forma.appendChild(campo('Texto do extrato', area));
+
+      var acoes = no('div', 'acoes');
+      acoes.appendChild(botao('btn btn-ouro', 'Ler o que eu colei', function () {
+        var texto = area.value || '';
+        if (texto.trim().length < 12) { mostrarErro(forma, 'Cole o texto do extrato aqui.'); return; }
+
+        // Com ponto e vírgula ou tabulação é planilha; senão é texto corrido.
+        var linhas = texto.split(/\r?\n/);
+        var tabular = linhas.filter(function (l) { return /;|\t/.test(l); }).length > linhas.length / 3;
+        var lido = tabular ? Extrato.lerCsv(texto, '') : Extrato.lerLinhas(linhas, '');
+
+        voltarNavegacao();
+        setTimeout(function () {
+          mostrarExtrato(lido, { name: 'texto colado' }, lido.itens.length ? '' : 'colado');
+        }, 240);
+      }));
+      forma.appendChild(acoes);
+      folha.appendChild(forma);
+      setTimeout(function () { area.focus(); }, 270);
+    });
+  }
+
   // Quando a pessoa usa "Compartilhar" do Android, o service worker guarda o
   // arquivo e recarrega o aplicativo com ?compartilhado=1. Aqui eu pego ele.
   function pegarArquivoCompartilhado() {
@@ -11606,18 +11658,49 @@
         return false;
       }
 
+      // Caminho 4: em pedaços. Cada slice é outro blob, com leitura própria.
+      function viaPedacos() {
+        var pedaco = 262144;
+        var partes = [];
+        var pos = 0;
+
+        function proximo() {
+          if (pos >= arquivo.size) {
+            var total = 0, i;
+            for (i = 0; i < partes.length; i++) total += partes[i].length;
+            var fora = new Uint8Array(total), p = 0;
+            for (i = 0; i < partes.length; i++) { fora.set(partes[i], p); p += partes[i].length; }
+            if (fora.length) ok(fora); else erro(ultimo || new Error('vazio'));
+            return;
+          }
+          var fatia = arquivo.slice(pos, Math.min(pos + pedaco, arquivo.size));
+          pos += pedaco;
+          var seguir = function (b) { partes.push(new Uint8Array(b)); proximo(); };
+          if (typeof fatia.arrayBuffer === 'function') {
+            fatia.arrayBuffer().then(seguir, function (e) { erro(ultimo || e); });
+            return;
+          }
+          var l = new FileReader();
+          l.onload = function () { seguir(l.result); };
+          l.onerror = function () { erro(ultimo || l.error || new Error('leitura falhou')); };
+          l.readAsArrayBuffer(fatia);
+        }
+        proximo();
+      }
+
       // Caminho 3: pela rede interna do navegador. Em alguns aparelhos ele
       // funciona quando os dois de cima falham.
       function viaUrl() {
         var url;
         try { url = URL.createObjectURL(arquivo); }
-        catch (e) { erro(ultimo || e); return; }
+        catch (e) { ultimo = ultimo || e; viaPedacos(); return; }
         fetch(url).then(function (r) { return r.arrayBuffer(); }).then(function (b) {
           URL.revokeObjectURL(url);
-          if (!bom(b)) erro(ultimo || new Error('vazio'));
+          if (!bom(b)) viaPedacos();
         }, function (e) {
           URL.revokeObjectURL(url);
-          erro(ultimo || e);
+          ultimo = ultimo || e;
+          viaPedacos();
         });
       }
 
@@ -11651,10 +11734,11 @@
       (arquivo && arquivo.size ? ' · ' + Math.round(arquivo.size / 1024) + ' KB' : '') + ')';
 
     if (/NotFound/i.test(nome)) {
-      return 'O Android não deixou o Caixa ler esse arquivo. Isso costuma acontecer quando ' +
-        'ele está no Google Drive, no WhatsApp ou em outro aplicativo.\n\n' +
-        'O jeito que funciona: abra o arquivo no "Arquivos" ou no "Downloads" do celular, ' +
-        'toque em Compartilhar e escolha o Caixa.' + detalhe;
+      return 'O Android deixou escolher o arquivo, mas não deixou o Caixa ler o conteúdo. ' +
+        'Isso é uma trava do próprio sistema, não do aplicativo.\n\n' +
+        'Dois jeitos que funcionam:\n' +
+        '1. Abra o arquivo no gerenciador de arquivos, toque em Compartilhar e escolha o Caixa.\n' +
+        '2. Abra o extrato, copie o texto e use "Colar o extrato" aqui embaixo.' + detalhe;
     }
     if (/NotReadable|NotAllowed|Security/i.test(nome)) {
       return 'O Android bloqueou a leitura desse arquivo. Baixe ele para a pasta Downloads ' +
@@ -11708,9 +11792,10 @@
       perguntar({
         titulo: 'Não deu para abrir',
         texto: recadoDeLeitura(e, arquivo),
-        ok: 'Escolher de novo', cancelar: 'Fechar'
+        ok: 'Colar o texto', cancelar: 'Tentar outro arquivo',
+        aoCancelar: function () { setTimeout(function () { $('arquivoExtrato').click(); }, 200); }
       }, function () {
-        setTimeout(function () { $('arquivoExtrato').click(); }, 200);
+        setTimeout(abrirColarExtrato, 240);
       });
     });
   }
@@ -11773,6 +11858,8 @@
     if (!itens.length) {
       var recado = problema === 'imagem'
         ? 'Esse PDF é uma imagem escaneada, sem texto por dentro. Peça ao banco o extrato em PDF normal, OFX, CSV ou Excel.'
+        : problema === 'colado'
+          ? 'Não achei data e valor no texto que você colou. Copie a parte da lista de lançamentos, com a data, a descrição e o valor de cada linha.'
         : problema === 'planilha'
           ? 'Não consegui abrir essa planilha. Se for .xls antigo, salve como .xlsx ou baixe em CSV.'
           : problema === 'formato'

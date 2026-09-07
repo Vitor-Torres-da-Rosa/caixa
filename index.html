@@ -79,6 +79,14 @@
   input, select { -webkit-appearance: none; appearance: none; }
 
   .oculto { display: none !important; }
+  /* O input de arquivo fica invisível, mas desenhado: com display:none
+     alguns Android devolvem um arquivo que depois não deixam ler. */
+  .input-arquivo {
+    position: fixed; left: 0; bottom: 0;
+    width: 1px; height: 1px; opacity: 0;
+    border: 0; padding: 0; margin: 0;
+    pointer-events: none; z-index: -1;
+  }
   .num { font-variant-numeric: tabular-nums; }
 
   /* ---------- Estrutura ---------- */
@@ -226,6 +234,8 @@
   }
   .linha:first-child { border-top: 0; }
   .linha:active { background: var(--cartao-2); }
+  label.linha, label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  label.btn { display: grid; place-items: center; }
 
   .selo {
     width: 36px;
@@ -534,7 +544,7 @@
   }
 
   .dialogo-titulo { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
-  .dialogo-texto { font-size: 14px; color: var(--suave); line-height: 1.5; margin: 0 0 20px; }
+  .dialogo-texto { font-size: 14px; color: var(--suave); line-height: 1.5; margin: 0 0 20px; white-space: pre-line; }
   .dialogo-acoes { display: flex; flex-direction: column; gap: 9px; }
   .dialogo-acoes .btn { padding: 14px; border-radius: 13px; }
   .dialogo .btn-vermelho {
@@ -1390,21 +1400,31 @@
 </div>
 
 <div class="toque" id="toque" role="status" aria-live="polite"></div>
-<input type="file" id="arquivoRestaurar" class="oculto">
-<input type="file" id="arquivoExtrato" class="oculto">
+<input type="file" id="arquivoRestaurar" class="input-arquivo">
+<input type="file" id="arquivoExtrato" class="input-arquivo">
 
 <script src="config.js"></script>
 <script>
 (function () {
   'use strict';
 
-  var VERSAO = '3.9.0';
+  var VERSAO = '3.9.1';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.9.1',
+      data: '2026-09-07',
+      itens: [
+        'Conserto do "Não foi possível abrir o arquivo": o app tenta ler de três jeitos diferentes antes de desistir, e o botão virou um toque direto no seletor.',
+        'Novo caminho que não depende do seletor: abra o arquivo no gerenciador de arquivos, toque em Compartilhar e escolha o Caixa.',
+        'Quando falha mesmo assim, o app diz o motivo técnico e oferece escolher de novo.',
+        'Restaurar backup passou a usar o mesmo caminho teimoso de leitura.'
+      ]
+    },
     {
       versao: '3.9.0',
       data: '2026-09-07',
@@ -3524,6 +3544,20 @@
     return v;
   }
 
+  // Um <label> ligado ao input abre o seletor com o toque da pessoa. O
+  // click() por JavaScript funciona no computador, mas em vários Android
+  // ele devolve um arquivo que o sistema depois não deixa ler.
+  function rotuloDeArquivo(paraId, classe) {
+    var l = no('label', classe);
+    l.setAttribute('for', paraId);
+    l.setAttribute('role', 'button');
+    l.tabIndex = 0;
+    l.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(paraId).click(); }
+    });
+    return l;
+  }
+
   function selo(cor, letra) {
     var s = no('div', 'selo', letra);
     s.style.background = cor + '22';
@@ -3769,6 +3803,12 @@
     $('entrada').classList.add('escondida');
     $('entrada').textContent = '';
     document.body.style.overflow = '';
+    // Só agora dá para mexer no arquivo que veio pelo "Compartilhar": antes
+    // disso a pessoa nem tinha entrado na conta dela.
+    if (partilhaPendente) {
+      partilhaPendente = false;
+      setTimeout(pegarArquivoCompartilhado, 500);
+    }
   }
 
   function campoEntrada(nomeIcone, tipo, dica, valor) {
@@ -4486,6 +4526,14 @@
   var agora = new Date();
   var mesAtivo = { ano: agora.getFullYear(), mes: agora.getMonth() };
   var telaAtiva = 'inicio';
+
+  // Guardo a marca do "Compartilhar" antes de qualquer coisa e limpo a barra
+  // de endereço, para não repetir a importação se a página recarregar.
+  var partilhaBusca = String(window.location.search || '');
+  var partilhaPendente = partilhaBusca.indexOf('compartilhado=') >= 0;
+  if (partilhaPendente) {
+    try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+  }
   var filtroTransacoes = 'todas';
 
   // mes: o mês do seletor; tres e ano: contados a partir de hoje;
@@ -5301,10 +5349,9 @@
 
       var acoesTopo = no('div', 'duas');
       acoesTopo.style.marginTop = '14px';
-      acoesTopo.appendChild(botao('btn btn-fantasma', 'Importar fatura', function () {
-        fecharFolha();
-        setTimeout(abrirImportarExtrato, 240);
-      }));
+      var importar = rotuloDeArquivo('arquivoExtrato', 'btn btn-fantasma');
+      importar.textContent = 'Importar fatura';
+      acoesTopo.appendChild(importar);
       acoesTopo.appendChild(botao('btn btn-fantasma', 'Editar cartão', function () {
         fecharFolha();
         setTimeout(function () { abrirFolhaConta(id); }, 240);
@@ -7815,11 +7862,11 @@
     [
       ['💾', 'Fazer backup (JSON)', 'Salva tudo em um arquivo', fazerBackup],
       ['📊', 'Exportar CSV', 'Lançamentos para planilha', exportarCsv],
-      ['🏦', 'Importar extrato do banco', 'Extrato ou fatura: PDF, Excel, OFX ou CSV', abrirImportarExtrato],
-      ['↺', 'Restaurar backup', 'Substitui os dados atuais', function () { $('arquivoRestaurar').click(); }],
+      ['🏦', 'Importar extrato do banco', 'Extrato ou fatura: PDF, Excel, OFX ou CSV', 'arquivoExtrato'],
+      ['↺', 'Restaurar backup', 'Substitui os dados atuais', 'arquivoRestaurar'],
       ['⚙', 'Preferências', 'Seu nome e o cálculo da reserva', abrirFolhaPreferencias]
     ].forEach(function (o) {
-      var linha = botao('linha', null, o[3]);
+      var linha = typeof o[3] === 'string' ? rotuloDeArquivo(o[3], 'linha') : botao('linha', null, o[3]);
       juntar(linha,
         selo('#60A5FA', o[0]),
         juntar(no('div', 'linha-texto'),
@@ -7828,6 +7875,12 @@
       );
       cDados.appendChild(linha);
     });
+
+    var dica = no('div', 'linha-nota');
+    dica.style.padding = '2px 16px 16px';
+    dica.textContent = 'Se o celular não deixar escolher o arquivo, abra ele no gerenciador ' +
+      'de arquivos, toque em Compartilhar e escolha o Caixa.';
+    cDados.appendChild(dica);
 
     if (NUVEM.ligada) {
       var sinc = botao('linha', null, function () {
@@ -11506,6 +11559,38 @@
     $('arquivoExtrato').click();
   }
 
+  // Quando a pessoa usa "Compartilhar" do Android, o service worker guarda o
+  // arquivo e recarrega o aplicativo com ?compartilhado=1. Aqui eu pego ele.
+  function pegarArquivoCompartilhado() {
+    var busca = partilhaBusca;
+    partilhaBusca = '';
+    if (busca.indexOf('compartilhado=') < 0) return;
+
+    if (busca.indexOf('compartilhado=1') < 0) {
+      avisarCaixa('Nada chegou', 'O arquivo não veio junto. Tente compartilhar de novo.', function () {});
+      return;
+    }
+    if (!window.caches) return;
+
+    caches.open('caixa-partilha').then(function (cache) {
+      return cache.match('./arquivo-compartilhado').then(function (r) {
+        if (!r) return null;
+        var nome = 'arquivo';
+        try { nome = decodeURIComponent(r.headers.get('X-Nome') || 'arquivo'); } catch (e) {}
+        var tipo = r.headers.get('Content-Type') || 'application/octet-stream';
+        return r.blob().then(function (b) {
+          cache.delete('./arquivo-compartilhado');
+          return new File([b], nome, { type: tipo });
+        });
+      });
+    }).then(function (arquivo) {
+      if (!arquivo || !arquivo.size) return;
+      lerArquivoExtrato(arquivo);
+    }).catch(function () {
+      avisarCaixa('Nada chegou', 'Não consegui pegar o arquivo compartilhado. Tente de novo.', function () {});
+    });
+  }
+
   // O Android às vezes entrega um arquivo que o FileReader não consegue
   // abrir (veio da nuvem, ou o sistema recolheu a página enquanto o seletor
   // estava aberto). Por isso tento dois caminhos antes de desistir.
@@ -11513,40 +11598,73 @@
     return new Promise(function (ok, erro) {
       if (!arquivo) { erro(new Error('sem arquivo')); return; }
       if (!arquivo.size) { erro(new Error('vazio')); return; }
+      var ultimo = null;
 
-      function viaLeitor() {
-        var leitor = new FileReader();
-        leitor.onload = function () { ok(new Uint8Array(leitor.result)); };
-        leitor.onerror = function () {
-          erro(leitor.error || new Error('leitura falhou'));
-        };
-        try { leitor.readAsArrayBuffer(arquivo); }
-        catch (e) { erro(e); }
+      function bom(b) {
+        var by = new Uint8Array(b);
+        if (by.length) { ok(by); return true; }
+        return false;
       }
 
+      // Caminho 3: pela rede interna do navegador. Em alguns aparelhos ele
+      // funciona quando os dois de cima falham.
+      function viaUrl() {
+        var url;
+        try { url = URL.createObjectURL(arquivo); }
+        catch (e) { erro(ultimo || e); return; }
+        fetch(url).then(function (r) { return r.arrayBuffer(); }).then(function (b) {
+          URL.revokeObjectURL(url);
+          if (!bom(b)) erro(ultimo || new Error('vazio'));
+        }, function (e) {
+          URL.revokeObjectURL(url);
+          erro(ultimo || e);
+        });
+      }
+
+      // Caminho 2: o velho FileReader.
+      function viaLeitor() {
+        var leitor = new FileReader();
+        leitor.onload = function () { if (!bom(leitor.result)) viaUrl(); };
+        leitor.onerror = function () {
+          ultimo = leitor.error || ultimo || new Error('leitura falhou');
+          viaUrl();
+        };
+        try { leitor.readAsArrayBuffer(arquivo); }
+        catch (e) { ultimo = ultimo || e; viaUrl(); }
+      }
+
+      // Caminho 1: o moderno.
       if (typeof arquivo.arrayBuffer === 'function') {
         arquivo.arrayBuffer().then(function (b) {
-          var by = new Uint8Array(b);
-          if (by.length) ok(by); else erro(new Error('vazio'));
-        }, function () { viaLeitor(); });
+          if (!bom(b)) viaLeitor();
+        }, function (e) { ultimo = e; viaLeitor(); });
         return;
       }
       viaLeitor();
     });
   }
 
-  function recadoDeLeitura(e) {
+  function recadoDeLeitura(e, arquivo) {
     var nome = (e && (e.name || e.message)) || '';
+    var detalhe = '\n\n(' + (nome || 'sem detalhe') +
+      (arquivo && arquivo.name ? ' · ' + arquivo.name : '') +
+      (arquivo && arquivo.size ? ' · ' + Math.round(arquivo.size / 1024) + ' KB' : '') + ')';
+
     if (/NotFound/i.test(nome)) {
-      return 'O aparelho perdeu o arquivo antes de eu ler. Baixe ele de novo e importe logo em seguida.';
+      return 'O Android não deixou o Caixa ler esse arquivo. Isso costuma acontecer quando ' +
+        'ele está no Google Drive, no WhatsApp ou em outro aplicativo.\n\n' +
+        'O jeito que funciona: abra o arquivo no "Arquivos" ou no "Downloads" do celular, ' +
+        'toque em Compartilhar e escolha o Caixa.' + detalhe;
     }
     if (/NotReadable|NotAllowed|Security/i.test(nome)) {
-      return 'O Android não deixou eu ler esse arquivo. Se ele está no Google Drive ou em outra nuvem, baixe para o celular primeiro e importe do "Downloads".';
+      return 'O Android bloqueou a leitura desse arquivo. Baixe ele para a pasta Downloads ' +
+        'do celular e tente por lá, ou mande para o Caixa pelo Compartilhar.' + detalhe;
     }
     if (/vazio/.test(nome)) {
-      return 'Esse arquivo veio vazio. Baixe de novo pelo aplicativo do banco.';
+      return 'Esse arquivo veio vazio. Baixe de novo pelo aplicativo do banco.' + detalhe;
     }
-    return 'Não consegui abrir o arquivo (' + (nome || 'motivo desconhecido') + '). Tente baixar de novo, ou escolher pelo "Downloads" do celular.';
+    return 'Não consegui abrir o arquivo. Tente mandar para o Caixa pelo Compartilhar, ' +
+      'a partir do gerenciador de arquivos.' + detalhe;
   }
 
   function lerArquivoExtrato(arquivo) {
@@ -11585,7 +11703,15 @@
       mostrarExtrato(lido, arquivo, lido.itens.length ? '' : 'csv');
     }, function (e) {
       limparAviso();
-      avisarCaixa('Não deu para abrir', recadoDeLeitura(e), function () {});
+      // Tentar de novo resolve boa parte das vezes: o Android costuma
+      // devolver a permissão do arquivo na segunda escolha.
+      perguntar({
+        titulo: 'Não deu para abrir',
+        texto: recadoDeLeitura(e, arquivo),
+        ok: 'Escolher de novo', cancelar: 'Fechar'
+      }, function () {
+        setTimeout(function () { $('arquivoExtrato').click(); }, 200);
+      });
     });
   }
 
@@ -11998,16 +12124,18 @@
   }
 
   function restaurarBackup(arquivo) {
-    var leitor = new FileReader();
-
-    leitor.onload = function () {
+    // Mesmo caminho teimoso do importar: três tentativas de leitura e um
+    // recado de verdade quando o aparelho não deixa abrir.
+    bytesDoArquivo(arquivo).then(function (bytes) {
       var bruto;
       try {
         // Alguns aparelhos entregam o arquivo com BOM ou com sobras de espaço.
-        var cru = new TextDecoder('utf-8').decode(new Uint8Array(leitor.result));
+        var cru = new TextDecoder('utf-8').decode(bytes);
         bruto = JSON.parse(cru.replace(/^\uFEFF/, '').trim());
       } catch (e) {
-        avisar('Não consegui ler o arquivo: ' + (e && e.message ? e.message : 'formato desconhecido'));
+        avisarCaixa('Arquivo inválido',
+          'Não consegui entender esse arquivo como backup do Caixa. (' +
+          (e && e.message ? e.message : 'formato desconhecido') + ')', function () {});
         return;
       }
 
@@ -12059,12 +12187,15 @@
           avisar('Não deu para restaurar: ' + (e && e.message ? e.message : 'erro ao salvar'));
         });
       });
-    };
-
-    leitor.onerror = function () {
-      avisar('Não foi possível abrir o arquivo. Copie ele para o aparelho e tente de novo.');
-    };
-    leitor.readAsArrayBuffer(arquivo);
+    }, function (e) {
+      perguntar({
+        titulo: 'Não deu para abrir',
+        texto: recadoDeLeitura(e, arquivo),
+        ok: 'Escolher de novo', cancelar: 'Fechar'
+      }, function () {
+        setTimeout(function () { $('arquivoRestaurar').click(); }, 200);
+      });
+    });
   }
 
   function apagarTudo() {

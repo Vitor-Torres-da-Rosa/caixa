@@ -1,4 +1,4 @@
-const VERSAO = '3.9.0';
+const VERSAO = '3.9.1';
 const CACHE = 'caixa-v' + VERSAO;
 
 const ESSENCIAIS = [
@@ -38,11 +38,41 @@ self.addEventListener('message', (evento) => {
   }
 });
 
-// Rede primeiro, com reserva no cache.
+// Onde o arquivo compartilhado fica guardado até o aplicativo pegar ele.
+const CACHE_PARTILHA = 'caixa-partilha';
+const CAMINHO_PARTILHA = './arquivo-compartilhado';
+
 self.addEventListener('fetch', (evento) => {
   const req = evento.request;
+  const alvo = new URL(req.url);
+
+  // O Android manda o arquivo aqui quando a pessoa usa "Compartilhar".
+  // Guardo no cache e mando o aplicativo abrir; é o caminho que funciona
+  // quando o seletor de arquivos não deixa ler.
+  if (req.method === 'POST' && alvo.pathname.endsWith('/compartilhar')) {
+    evento.respondWith((async () => {
+      try {
+        const dados = await req.formData();
+        const arquivo = dados.get('arquivo');
+        if (arquivo && arquivo.size) {
+          const cache = await caches.open(CACHE_PARTILHA);
+          await cache.put(CAMINHO_PARTILHA, new Response(arquivo, {
+            headers: {
+              'Content-Type': arquivo.type || 'application/octet-stream',
+              'X-Nome': encodeURIComponent(arquivo.name || 'arquivo')
+            }
+          }));
+          return Response.redirect('./?compartilhado=1', 303);
+        }
+      } catch (e) { /* cai no redirecionamento simples */ }
+      return Response.redirect('./?compartilhado=0', 303);
+    })());
+    return;
+  }
+
   if (req.method !== 'GET') return;
 
+  // Rede primeiro, com reserva no cache.
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 

@@ -80,6 +80,7 @@ create table if not exists public.contas (
   tipo          text        not null default 'Conta corrente',
   saldo_inicial bigint      not null default 0,
   cor           text        not null default '#E9B44C',
+  banco         text        not null default '',
   criado_em     timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
   excluido_em   timestamptz

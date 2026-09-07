@@ -179,6 +179,7 @@
   .kpi .variacao { font-size: 12px; }
 
   .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  [hidden] { display: none !important; }
 
   /* ---------- Gráficos ---------- */
 
@@ -658,6 +659,8 @@
   .escolha-item[aria-selected="true"] { color: var(--ouro); font-weight: 600; }
   .escolha-item .txt { flex: 1 1 auto; min-width: 0; }
   .escolha-item .extra { color: var(--suave); font-size: 13px; font-weight: 400; }
+  .selo-marca { font-weight: 800; letter-spacing: -.3px; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .cabeca-cartao { display: flex; align-items: center; gap: 11px; margin-bottom: 14px; }
   .cabeca-banco { display: flex; align-items: center; gap: 11px; padding: 12px;
     margin: 2px 0 14px; border: 1px solid var(--borda-viva); border-radius: 14px;
     background: rgba(233,180,76,.05); }
@@ -1395,13 +1398,25 @@
 (function () {
   'use strict';
 
-  var VERSAO = '3.8.0';
+  var VERSAO = '3.9.0';
   var CHAVE = 'caixa.dados.v2';
   var CHAVE_ANTIGA = 'caixa.lancamentos.v1';
   var CHAVE_CONTAS = 'caixa.usuarios.v3';
   var CHAVE_SESSAO = 'caixa.sessao.v3';
 
   var NOVIDADES = [
+    {
+      versao: '3.9.0',
+      data: '2026-09-07',
+      itens: [
+        'Cartões de crédito ganharam lugar próprio no Início: adicionar, editar e excluir.',
+        'Cada cartão tem a marca do banco do lado, para não confundir um com o outro.',
+        'Tocando no cartão você vê a fatura em aberto, as faturas mês a mês e os últimos gastos.',
+        'Dá para dizer o dia em que a fatura fecha e o dia em que ela vence — aí os gastos se separam por fatura sozinhos.',
+        '"Total em contas" agora é só o dinheiro que está no banco; a dívida do cartão aparece separada e continua descontando do patrimônio.',
+        'Importar arquivo: quando o aparelho não deixa abrir, o app diz o motivo e o que fazer, e tenta por um segundo caminho antes de desistir.'
+      ]
+    },
     {
       versao: '3.8.0',
       data: '2026-09-07',
@@ -2057,7 +2072,9 @@
           saldoInicial: inteiro(c.saldoInicial),
           // A cor pode vir da paleta ou da marca de um banco reconhecido.
           cor: /^#[0-9a-fA-F]{6}$/.test(c.cor) ? c.cor : CORES[0],
-          banco: texto(c.banco).slice(0, 20)
+          banco: texto(c.banco).slice(0, 20),
+          fechamento: Math.min(Math.max(inteiro(c.fechamento), 0), 31),
+          vencimento: Math.min(Math.max(inteiro(c.vencimento), 0), 31)
         };
       });
     }
@@ -2675,7 +2692,8 @@
     return {
       contas: estado.contas.map(function (c) {
         return { id: c.id, user_id: uid, nome: c.nome, tipo: c.tipo,
-                 saldo_inicial: c.saldoInicial, cor: c.cor, banco: c.banco || '' };
+                 saldo_inicial: c.saldoInicial, cor: c.cor, banco: c.banco || '',
+                 fechamento: c.fechamento || 0, vencimento: c.vencimento || 0 };
       }),
       lancamentos: estado.lancamentos.map(function (l) {
         return {
@@ -2863,7 +2881,8 @@
 
     novo.contas = (r.contas || []).map(function (c) {
       return { id: c.id, nome: c.nome, tipo: c.tipo, saldoInicial: c.saldo_inicial,
-               cor: c.cor, banco: c.banco || '' };
+               cor: c.cor, banco: c.banco || '',
+               fechamento: c.fechamento || 0, vencimento: c.vencimento || 0 };
     });
 
     novo.lancamentos = (r.lancamentos || []).map(function (l) {
@@ -3056,15 +3075,35 @@
     return s;
   }
 
+  // Dinheiro que está mesmo nas contas. Cartão de crédito fica de fora: o
+  // que você gastou nele ainda não saiu do banco, é dívida, não saldo.
   function totalEmContas(ate) {
+    var cartao = {};
+    estado.contas.forEach(function (c) { if (ehCartao(c)) cartao[c.id] = true; });
+
     var s = 0;
-    estado.contas.forEach(function (c) { s += c.saldoInicial; });
+    estado.contas.forEach(function (c) { if (!ehCartao(c)) s += c.saldoInicial; });
     estado.lancamentos.forEach(function (l) {
       if (ate && l.data > ate) return;
+      if (cartao[l.contaId]) return;
       if (l.tipo === 'entrada') s += l.valor;
       else if (l.tipo === 'saida') s -= l.valor;
     });
     return s;
+  }
+
+  // O que ainda se deve nos cartões, somando tudo o que não foi pago.
+  function dividaDeCartoes(ate) {
+    var cartao = {};
+    var divida = 0;
+    estado.contas.forEach(function (c) { if (ehCartao(c)) { cartao[c.id] = true; divida -= c.saldoInicial; } });
+    estado.lancamentos.forEach(function (l) {
+      if (ate && l.data > ate) return;
+      if (!cartao[l.contaId]) return;
+      if (l.tipo === 'saida') divida += l.valor;
+      else if (l.tipo === 'entrada') divida -= l.valor;
+    });
+    return divida;
   }
 
   function valorAtivoEm(ativo, ate) {
@@ -3090,7 +3129,9 @@
     return s;
   }
 
-  function patrimonio(ate) { return totalEmContas(ate) + totalInvestido(ate); }
+  function patrimonio(ate) {
+    return totalEmContas(ate) + totalInvestido(ate) - dividaDeCartoes(ate);
+  }
 
   // ---------- Aposentadoria ----------
   //
@@ -3491,10 +3532,26 @@
     return s;
   }
 
-  // O selo de uma conta: monograma do banco quando eu sei de qual é.
+  // Claro ou escuro? Serve para escolher a cor do texto em cima da marca.
+  function ehClara(hex) {
+    var m = /^#([0-9a-fA-F]{6})$/.exec(String(hex || ''));
+    if (!m) return false;
+    var n = parseInt(m[1], 16);
+    var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150;
+  }
+
+  // O selo de uma conta. Quando eu sei o banco, o selo vira uma plaquinha
+  // cheia na cor da marca, com o monograma — assim dois cartões não se
+  // confundem na lista.
   function seloDeConta(c) {
     var b = c.banco ? Extrato.bancoPorChave(c.banco) : null;
-    return selo(c.cor, b ? b.marca : c.nome.charAt(0).toUpperCase());
+    if (!b) return selo(c.cor, c.nome.charAt(0).toUpperCase());
+    var s = no('div', 'selo selo-marca', b.marca);
+    s.style.background = c.cor;
+    s.style.color = ehClara(c.cor) ? '#12100C' : '#FFFFFF';
+    if (b.marca.length > 2) s.classList.add('selo-curto');
+    return s;
   }
 
   // ---------- Ícones ----------
@@ -5011,10 +5068,11 @@
     topoContas.style.marginBottom = '8px';
     cContas.appendChild(topoContas);
 
-    if (!estado.contas.length) {
+    var soContas = estado.contas.filter(function (c) { return !ehCartao(c); });
+    if (!soContas.length) {
       cContas.appendChild(estadoVazio('Nenhuma conta', 'Cadastre suas contas para acompanhar o saldo de cada uma.'));
     } else {
-      estado.contas.forEach(function (c) {
+      soContas.forEach(function (c) {
         var s = saldoConta(c.id, null);
 
         var linha = no('div', 'linha linha-dupla');
@@ -5045,6 +5103,295 @@
       cContas.appendChild(totalLinha);
     }
     tela.appendChild(cContas);
+
+    tela.appendChild(cartaoDeCartoes());
+  }
+
+  // ---------- Cartões de crédito ----------
+
+  function ehCartao(c) { return c && c.tipo === 'Cartão de crédito'; }
+
+  function diasDoMes(vazio) {
+    var lista = [{ valor: '', rotulo: vazio }];
+    for (var d = 1; d <= 31; d++) lista.push({ valor: String(d), rotulo: 'Dia ' + d });
+    return lista;
+  }
+
+  function cartoes() { return estado.contas.filter(ehCartao); }
+
+  function cartaoDeCartoes() {
+    var c = cartao('liso');
+    var topo = topoDeCartao('Cartões', '+ Novo', function () { abrirFolhaConta(null, true); });
+    topo.style.padding = '16px 16px 0';
+    topo.style.marginBottom = '8px';
+    c.appendChild(topo);
+
+    var lista = cartoes();
+    if (!lista.length) {
+      c.appendChild(estadoVazio('Nenhum cartão',
+        'Cadastre seus cartões de crédito para ver a fatura de cada um e importar os gastos.'));
+      return c;
+    }
+
+    lista.forEach(function (cart) {
+      var f = faturaEmDestaque(cart.id);
+
+      var linha = no('div', 'linha linha-dupla');
+      var alvo = botao('linha-alvo', null, function () { abrirTelaCartao(cart.id); });
+      juntar(alvo,
+        seloDeConta(cart),
+        juntar(no('div', 'linha-texto'),
+          no('div', 'linha-titulo', cart.nome),
+          no('div', 'linha-sub', f.rotuloCurto)),
+        juntar(no('div', 'linha-fim'),
+          no('div', 'linha-valor num' + (f.total > 0 ? ' vermelho' : ''), emReais(f.total)))
+      );
+      linha.appendChild(alvo);
+
+      var lapis = botao('linha-acao', null, function () { abrirFolhaConta(cart.id); });
+      lapis.setAttribute('aria-label', 'Editar o cartão ' + cart.nome);
+      lapis.appendChild(icone('lapis'));
+      linha.appendChild(lapis);
+
+      c.appendChild(linha);
+    });
+
+    var total = dividaDeCartoes(null);
+    var totalLinha = no('div', 'linha');
+    totalLinha.style.background = 'var(--cartao-2)';
+    juntar(totalLinha,
+      juntar(no('div', 'linha-texto'), no('div', 'linha-titulo suave', 'Total a pagar nos cartões')),
+      juntar(no('div', 'linha-fim'), no('div', 'linha-valor num' + (total > 0 ? ' vermelho' : ''), emReais(total)))
+    );
+    c.appendChild(totalLinha);
+    return c;
+  }
+
+  // Sem dia de fechamento, a fatura é o mês inteiro. Com ele, a fatura que
+  // fecha no dia X pega de X+1 do mês anterior até X deste mês.
+  function diaValido(n) { return n >= 1 && n <= 31 ? n : 0; }
+
+  function ultimoDia(ano, mes) { return new Date(ano, mes + 1, 0).getDate(); }
+
+  function comDia(ano, mes, dia) {
+    var d = Math.min(dia, ultimoDia(ano, mes));
+    return ano + '-' + String(mes + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+
+  // Devolve a fatura que contém uma data qualquer, para um cartão.
+  function faturaDoCartao(cart, ano, mes) {
+    var fecha = diaValido(inteiro(cart.fechamento));
+    var vence = diaValido(inteiro(cart.vencimento));
+
+    if (!fecha) {
+      var deM = comDia(ano, mes, 1);
+      var ateM = comDia(ano, mes, 31);
+      return { chave: prefixoMes(ano, mes), de: deM, ate: ateM,
+               vence: vence ? proximoDia(ano, mes, vence, 1) : '',
+               rotulo: MESES[mes] + ' de ' + ano };
+    }
+    var antes = new Date(ano, mes - 1, 1);
+    var de = proximoDia(antes.getFullYear(), antes.getMonth(), fecha, 0);
+    de = somarUmDia(de);
+    var ate = comDia(ano, mes, fecha);
+    return { chave: prefixoMes(ano, mes), de: de, ate: ate,
+             vence: vence ? proximoDia(ano, mes, vence, vence > fecha ? 0 : 1) : '',
+             rotulo: MESES[mes] + ' de ' + ano };
+  }
+
+  function proximoDia(ano, mes, dia, somaMes) {
+    var d = new Date(ano, mes + (somaMes || 0), 1);
+    return comDia(d.getFullYear(), d.getMonth(), dia);
+  }
+
+  function somarUmDia(data) {
+    var p = data.split('-');
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + 1);
+    return comDia(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  // Todas as faturas com gasto, da mais nova para a mais velha.
+  function faturasDoCartao(id) {
+    var cart = achar(estado.contas, id);
+    if (!cart) return [];
+    var itens = estado.lancamentos.filter(function (l) { return l.contaId === id; });
+    var mapa = {};
+
+    itens.forEach(function (l) {
+      var p = l.data.split('-');
+      var ano = Number(p[0]), mes = Number(p[1]) - 1, dia = Number(p[2]);
+      var fecha = diaValido(inteiro(cart.fechamento));
+      // Comprou depois do fechamento? Entra na fatura do mês seguinte.
+      if (fecha && dia > fecha) {
+        var d = new Date(ano, mes + 1, 1);
+        ano = d.getFullYear(); mes = d.getMonth();
+      }
+      var f = faturaDoCartao(cart, ano, mes);
+      if (!mapa[f.chave]) { f.itens = []; f.total = 0; f.pago = 0; mapa[f.chave] = f; }
+      mapa[f.chave].itens.push(l);
+      if (l.tipo === 'entrada') mapa[f.chave].pago += l.valor;
+      else mapa[f.chave].total += l.valor;
+    });
+
+    return Object.keys(mapa).sort().reverse().map(function (k) { return mapa[k]; });
+  }
+
+  // A fatura de hoje: a que ainda não fechou.
+  function faturaAberta(id) {
+    var cart = achar(estado.contas, id);
+    if (!cart) return { total: 0, pago: 0, itens: [], vence: '' };
+    var hoje = new Date();
+    var ano = hoje.getFullYear(), mes = hoje.getMonth();
+    var fecha = diaValido(inteiro(cart.fechamento));
+    if (fecha && hoje.getDate() > fecha) {
+      var d = new Date(ano, mes + 1, 1);
+      ano = d.getFullYear(); mes = d.getMonth();
+    }
+    var alvo = faturaDoCartao(cart, ano, mes);
+    var todas = faturasDoCartao(id);
+    for (var i = 0; i < todas.length; i++) {
+      if (todas[i].chave === alvo.chave) return todas[i];
+    }
+    alvo.itens = []; alvo.total = 0; alvo.pago = 0;
+    return alvo;
+  }
+
+  // A fatura que interessa ver na lista: a deste mês, se já tem gasto; senão
+  // a última que teve. Mostrar R$ 0,00 tendo fatura fechada em aberto confunde.
+  function faturaEmDestaque(id) {
+    var aberta = faturaAberta(id);
+    if (aberta.total || aberta.pago) {
+      aberta.rotuloCurto = aberta.vence ? 'Vence em ' + dataBr(aberta.vence) : 'Fatura em aberto';
+      return aberta;
+    }
+    var todas = faturasDoCartao(id);
+    if (!todas.length) {
+      aberta.rotuloCurto = 'Sem gastos ainda';
+      return aberta;
+    }
+    var ultima = todas[0];
+    ultima.rotuloCurto = 'Fatura de ' + ultima.rotulo +
+      (ultima.vence ? ' · vence em ' + dataBr(ultima.vence) : '');
+    return ultima;
+  }
+
+  function abrirTelaCartao(id) {
+    var cart = achar(estado.contas, id);
+    if (!cart) return;
+
+    abrirFolha(cart.nome, function (folha) {
+      var aberta = faturaAberta(id);
+
+      var topo = cartao();
+      var cabeca = no('div', 'cabeca-cartao');
+      cabeca.appendChild(seloDeConta(cart));
+      var txt = no('div', 'cabeca-texto');
+      txt.appendChild(no('div', 'cabeca-nome', cart.nome));
+      txt.appendChild(no('div', 'cabeca-sub', 'Cartão de crédito'));
+      cabeca.appendChild(txt);
+      topo.appendChild(cabeca);
+
+      topo.appendChild(no('div', 'rotulo', 'Fatura em aberto'));
+      topo.appendChild(no('div', 'valorao num' + (aberta.total > 0 ? ' vermelho' : ''), emReais(aberta.total)));
+      var nota = [];
+      if (aberta.de) nota.push('de ' + dataBr(aberta.de) + ' a ' + dataBr(aberta.ate));
+      if (aberta.vence) nota.push('vence em ' + dataBr(aberta.vence));
+      if (aberta.pago) nota.push(emReais(aberta.pago) + ' já pago');
+      if (nota.length) topo.appendChild(no('div', 'linha-nota', nota.join(' · ')));
+
+      var acoesTopo = no('div', 'duas');
+      acoesTopo.style.marginTop = '14px';
+      acoesTopo.appendChild(botao('btn btn-fantasma', 'Importar fatura', function () {
+        fecharFolha();
+        setTimeout(abrirImportarExtrato, 240);
+      }));
+      acoesTopo.appendChild(botao('btn btn-fantasma', 'Editar cartão', function () {
+        fecharFolha();
+        setTimeout(function () { abrirFolhaConta(id); }, 240);
+      }));
+      topo.appendChild(acoesTopo);
+      folha.appendChild(topo);
+
+      var todas = faturasDoCartao(id);
+      if (!todas.length) {
+        folha.appendChild(estadoVazio('Sem gastos ainda',
+          'Importe a fatura do banco ou registre um gasto neste cartão.'));
+        return;
+      }
+
+      var cFat = cartao('liso');
+      var topoFat = topoDeCartao('Faturas', null);
+      topoFat.style.padding = '16px 16px 0';
+      topoFat.style.marginBottom = '8px';
+      cFat.appendChild(topoFat);
+
+      todas.forEach(function (f) {
+        var linha = botao('linha linha-alvo', null, function () { abrirFaturaDoMes(id, f.chave); });
+        juntar(linha,
+          juntar(no('div', 'linha-texto'),
+            no('div', 'linha-titulo', f.rotulo),
+            no('div', 'linha-sub', f.itens.length + ' lançamento(s)' +
+              (f.vence ? ' · vence em ' + dataBr(f.vence) : ''))),
+          juntar(no('div', 'linha-fim'),
+            no('div', 'linha-valor num' + (f.total > 0 ? ' vermelho' : ''), emReais(f.total)))
+        );
+        cFat.appendChild(linha);
+      });
+      folha.appendChild(cFat);
+
+      // Últimos gastos, com a marca do cartão do lado para não confundir.
+      var recentes = estado.lancamentos.filter(function (l) { return l.contaId === id; })
+        .sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; })
+        .slice(0, 12);
+
+      var cUlt = cartao('liso');
+      var topoUlt = topoDeCartao('Últimos gastos', null);
+      topoUlt.style.padding = '16px 16px 0';
+      topoUlt.style.marginBottom = '8px';
+      cUlt.appendChild(topoUlt);
+      recentes.forEach(function (l) { cUlt.appendChild(linhaDeGasto(l, cart)); });
+      folha.appendChild(cUlt);
+    });
+  }
+
+  function linhaDeGasto(l, cart) {
+    var linha = botao('linha linha-alvo', null, function () {
+      fecharFolha();
+      setTimeout(function () { abrirFolhaLancamento(l.id); }, 240);
+    });
+    juntar(linha,
+      seloDeConta(cart),
+      juntar(no('div', 'linha-texto'),
+        no('div', 'linha-titulo', l.descricao || l.categoria),
+        no('div', 'linha-sub', dataBr(l.data) + ' · ' + l.categoria)),
+      juntar(no('div', 'linha-fim'),
+        no('div', 'linha-valor num' + (l.tipo === 'entrada' ? ' verde' : ' vermelho'),
+          (l.tipo === 'entrada' ? '+ ' : '− ') + emReais(l.valor)))
+    );
+    return linha;
+  }
+
+  function abrirFaturaDoMes(id, chave) {
+    var cart = achar(estado.contas, id);
+    var f = null;
+    faturasDoCartao(id).forEach(function (x) { if (x.chave === chave) f = x; });
+    if (!cart || !f) return;
+
+    abrirFolha('Fatura de ' + f.rotulo, function (folha) {
+      var topo = cartao();
+      topo.appendChild(no('div', 'rotulo', 'Total da fatura'));
+      topo.appendChild(no('div', 'valorao num' + (f.total > 0 ? ' vermelho' : ''), emReais(f.total)));
+      var nota = ['de ' + dataBr(f.de) + ' a ' + dataBr(f.ate)];
+      if (f.vence) nota.push('vence em ' + dataBr(f.vence));
+      if (f.pago) nota.push(emReais(f.pago) + ' pago');
+      topo.appendChild(no('div', 'linha-nota', nota.join(' · ')));
+      folha.appendChild(topo);
+
+      var c = cartao('liso');
+      f.itens.slice().sort(function (a, b) { return a.data < b.data ? 1 : -1; })
+        .forEach(function (l) { c.appendChild(linhaDeGasto(l, cart)); });
+      folha.appendChild(c);
+    });
   }
 
   // ---------- Empreendedor: tela ----------
@@ -8154,48 +8501,101 @@
 
   // ---------- Folha: conta ----------
 
-  function abrirFolhaConta(id) {
+  function abrirFolhaConta(id, nasceCartao) {
     var existente = id ? achar(estado.contas, id) : null;
     if (id && !existente) return;
     var cor = existente ? existente.cor : CORES[estado.contas.length % CORES.length];
+    var chaveBanco = existente ? (existente.banco || '') : '';
+    var ehNovoCartao = !existente && nasceCartao;
 
-    abrirFolha(existente ? 'Editar conta' : 'Nova conta', function (folha) {
+    var titulo = existente ? (ehCartao(existente) ? 'Editar cartão' : 'Editar conta')
+                           : (ehNovoCartao ? 'Novo cartão' : 'Nova conta');
+
+    abrirFolha(titulo, function (folha) {
       var forma = no('div');
 
       var campoNome = entradaTexto(existente ? existente.nome : '', 'Ex.: Nubank', 40);
       forma.appendChild(campo('Nome', campoNome));
 
+      // Banco: escolher aqui já traz a cor e a marca.
+      var linhaBanco = no('div', 'linha-dupla-campo');
+      var campoBanco = entradaSelecao(
+        [{ valor: '', rotulo: 'Nenhum / outro' }].concat(
+          Extrato.listaDeBancos().map(function (b) { return { valor: b.chave, rotulo: b.nome }; })),
+        chaveBanco, 'De qual banco?');
+      campoBanco.aoMudar = function (v) {
+        chaveBanco = v;
+        var b = v ? Extrato.bancoPorChave(v) : null;
+        if (b) {
+          cor = b.cor;
+          if (!campoNome.value.trim()) campoNome.value = b.nome;
+          pintarPaleta();
+        }
+      };
+      linhaBanco.appendChild(campoBanco);
+      forma.appendChild(campo('Banco', linhaBanco));
+
       var campoTipo = entradaSelecao(TIPOS_CONTA.map(function (t) {
         return { valor: t, rotulo: t };
-      }), existente ? existente.tipo : 'Conta corrente');
+      }), existente ? existente.tipo : (ehNovoCartao ? 'Cartão de crédito' : 'Conta corrente'));
+      campoTipo.aoMudar = function () { mostrarCamposDeCartao(); };
       forma.appendChild(campo('Tipo', campoTipo));
 
       var campoSaldo = entradaValor(existente ? existente.saldoInicial : 0, false);
-      forma.appendChild(campo('Saldo inicial', campoSaldo));
+      var caixaSaldo = campo('Saldo inicial', campoSaldo);
+      forma.appendChild(caixaSaldo);
       var nota = no('div', 'linha-nota', 'O saldo atual é este valor mais os lançamentos desta conta.');
       nota.style.marginTop = '-8px';
       nota.style.marginBottom = '14px';
       forma.appendChild(nota);
 
+      // Fechamento e vencimento: só fazem sentido em cartão de crédito.
+      var caixaDias = no('div', 'duas');
+      var campoFecha = entradaSelecao(diasDoMes('Sem dia certo'),
+        String(existente && existente.fechamento ? existente.fechamento : ''), 'Fecha no dia');
+      var campoVence = entradaSelecao(diasDoMes('Sem dia certo'),
+        String(existente && existente.vencimento ? existente.vencimento : ''), 'Vence no dia');
+      caixaDias.appendChild(campo('Fecha no dia', campoFecha));
+      caixaDias.appendChild(campo('Vence no dia', campoVence));
+      forma.appendChild(caixaDias);
+      var notaCartao = no('div', 'linha-nota',
+        'Com o dia de fechamento eu separo os gastos por fatura. Sem ele, uso o mês do lançamento.');
+      notaCartao.style.marginTop = '-8px';
+      notaCartao.style.marginBottom = '14px';
+      forma.appendChild(notaCartao);
+
+      function mostrarCamposDeCartao() {
+        var cartao = campoTipo.value === 'Cartão de crédito';
+        caixaDias.hidden = !cartao;
+        notaCartao.hidden = !cartao;
+        nota.hidden = cartao;
+        caixaSaldo.hidden = cartao;
+      }
+      mostrarCamposDeCartao();
+
       var paleta = no('div', 'chips');
-      // A cor da marca do banco entra na paleta, senão ela sumiria na
-      // primeira vez que a pessoa abrisse a conta para editar.
-      var cores = CORES.slice();
-      if (existente && cores.indexOf(existente.cor) < 0) cores.unshift(existente.cor);
-      cores.forEach(function (c) {
-        var b = botao('chip', ' ', function () {
-          cor = c;
-          Array.prototype.forEach.call(paleta.children, function (outro) {
-            outro.setAttribute('aria-pressed', outro === b ? 'true' : 'false');
+      function pintarPaleta() {
+        paleta.textContent = '';
+        // A cor da marca do banco entra na paleta, senão ela sumiria na
+        // primeira vez que a pessoa abrisse a conta para editar.
+        var cores = CORES.slice();
+        if (cores.indexOf(cor) < 0) cores.unshift(cor);
+        cores.forEach(function (c) {
+          var b = botao('chip', ' ', function () {
+            cor = c;
+            Array.prototype.forEach.call(paleta.children, function (outro) {
+              outro.setAttribute('aria-pressed', outro === b ? 'true' : 'false');
+            });
           });
+          b.style.background = c;
+          b.style.borderColor = c;
+          b.style.width = '38px';
+          b.setAttribute('aria-pressed', c === cor ? 'true' : 'false');
+          b.setAttribute('aria-label', 'Cor ' + c);
+          paleta.appendChild(b);
         });
-        b.style.background = c;
-        b.style.borderColor = c;
-        b.style.width = '38px';
-        b.setAttribute('aria-pressed', c === cor ? 'true' : 'false');
-        b.setAttribute('aria-label', 'Cor ' + c);
-        paleta.appendChild(b);
-      });
+      }
+      pintarPaleta();
       forma.appendChild(campo('Cor', paleta));
 
       var acoes = no('div', 'acoes');
@@ -8203,15 +8603,25 @@
         var nome = campoNome.value.trim();
         if (!nome) { mostrarErro(forma, 'Dê um nome para a conta.'); return; }
 
+        var cartaoAgora = campoTipo.value === 'Cartão de crédito';
+        var fecha = inteiro(campoFecha.value);
+        var vence = inteiro(campoVence.value);
+
         if (existente) {
           existente.nome = nome;
           existente.tipo = campoTipo.value;
-          existente.saldoInicial = digitosParaCentavos(campoSaldo.value);
+          existente.saldoInicial = cartaoAgora ? 0 : digitosParaCentavos(campoSaldo.value);
           existente.cor = cor;
+          existente.banco = chaveBanco;
+          existente.fechamento = cartaoAgora ? fecha : 0;
+          existente.vencimento = cartaoAgora ? vence : 0;
         } else {
           estado.contas.push({
             id: novoId(), nome: nome, tipo: campoTipo.value,
-            saldoInicial: digitosParaCentavos(campoSaldo.value), cor: cor
+            saldoInicial: cartaoAgora ? 0 : digitosParaCentavos(campoSaldo.value), cor: cor,
+            banco: chaveBanco,
+            fechamento: cartaoAgora ? fecha : 0,
+            vencimento: cartaoAgora ? vence : 0
           });
         }
         salvar();
@@ -8221,27 +8631,44 @@
       }));
 
       if (existente) {
-        acoes.appendChild(botao('btn btn-perigo', 'Excluir conta', function () {
-          var usada = estado.lancamentos.filter(function (l) {
+        var eraCartao = ehCartao(existente);
+        var palavra = eraCartao ? 'cartão' : 'conta';
+
+        acoes.appendChild(botao('btn btn-perigo', 'Excluir ' + palavra, function () {
+          var presos = estado.lancamentos.filter(function (l) {
             return l.contaId === existente.id || l.contaDestinoId === existente.id;
-          }).length;
-          if (usada) {
-            avisarCaixa('Ainda há lançamentos aqui',
-              'Esta conta tem ' + usada + ' lançamento(s). Mova ou exclua esses lançamentos antes de apagar a conta.');
-            return;
-          }
-          perguntar({
-            titulo: 'Excluir a conta ' + existente.nome + '?',
-            texto: 'A conta some das telas e dos relatórios.',
-            ok: 'Excluir conta', tom: 'perigo'
-          }, function () {
+          });
+
+          function apagarDeVez() {
+            // Os lançamentos vão junto: sem a conta eles ficariam soltos,
+            // sem saldo e sem aparecer em lugar nenhum.
+            presos.forEach(function (l) { marcarExcluido('lancamentos', l.id); });
+            var fora = {};
+            presos.forEach(function (l) { fora[l.id] = true; });
+            estado.lancamentos = estado.lancamentos.filter(function (l) { return !fora[l.id]; });
             marcarExcluido('contas', existente.id);
             estado.contas = estado.contas.filter(function (c) { return c.id !== existente.id; });
             salvar();
             fecharFolha();
             desenhar();
-            avisar('Conta excluída.');
-          });
+            avisar(eraCartao ? 'Cartão excluído.' : 'Conta excluída.');
+          }
+
+          if (!presos.length) {
+            perguntar({
+              titulo: 'Excluir ' + (eraCartao ? 'o cartão ' : 'a conta ') + existente.nome + '?',
+              texto: 'Ele some das telas e dos relatórios.',
+              ok: 'Excluir ' + palavra, tom: 'perigo'
+            }, apagarDeVez);
+            return;
+          }
+
+          perguntar({
+            titulo: 'Excluir ' + (eraCartao ? 'o cartão ' : 'a conta ') + existente.nome + '?',
+            texto: 'Tem ' + presos.length + ' lançamento(s) aqui dentro. Eles serão apagados junto — ' +
+                   'inclusive os que vieram da fatura importada. Isso não tem volta.',
+            ok: 'Excluir com os lançamentos', tom: 'perigo'
+          }, apagarDeVez);
         }));
       }
 
@@ -11079,12 +11506,55 @@
     $('arquivoExtrato').click();
   }
 
+  // O Android às vezes entrega um arquivo que o FileReader não consegue
+  // abrir (veio da nuvem, ou o sistema recolheu a página enquanto o seletor
+  // estava aberto). Por isso tento dois caminhos antes de desistir.
+  function bytesDoArquivo(arquivo) {
+    return new Promise(function (ok, erro) {
+      if (!arquivo) { erro(new Error('sem arquivo')); return; }
+      if (!arquivo.size) { erro(new Error('vazio')); return; }
+
+      function viaLeitor() {
+        var leitor = new FileReader();
+        leitor.onload = function () { ok(new Uint8Array(leitor.result)); };
+        leitor.onerror = function () {
+          erro(leitor.error || new Error('leitura falhou'));
+        };
+        try { leitor.readAsArrayBuffer(arquivo); }
+        catch (e) { erro(e); }
+      }
+
+      if (typeof arquivo.arrayBuffer === 'function') {
+        arquivo.arrayBuffer().then(function (b) {
+          var by = new Uint8Array(b);
+          if (by.length) ok(by); else erro(new Error('vazio'));
+        }, function () { viaLeitor(); });
+        return;
+      }
+      viaLeitor();
+    });
+  }
+
+  function recadoDeLeitura(e) {
+    var nome = (e && (e.name || e.message)) || '';
+    if (/NotFound/i.test(nome)) {
+      return 'O aparelho perdeu o arquivo antes de eu ler. Baixe ele de novo e importe logo em seguida.';
+    }
+    if (/NotReadable|NotAllowed|Security/i.test(nome)) {
+      return 'O Android não deixou eu ler esse arquivo. Se ele está no Google Drive ou em outra nuvem, baixe para o celular primeiro e importe do "Downloads".';
+    }
+    if (/vazio/.test(nome)) {
+      return 'Esse arquivo veio vazio. Baixe de novo pelo aplicativo do banco.';
+    }
+    return 'Não consegui abrir o arquivo (' + (nome || 'motivo desconhecido') + '). Tente baixar de novo, ou escolher pelo "Downloads" do celular.';
+  }
+
   function lerArquivoExtrato(arquivo) {
-    var leitor = new FileReader();
-    leitor.onerror = function () { avisar('Não foi possível abrir o arquivo.'); };
-    leitor.onload = function () {
-      var bytes = new Uint8Array(leitor.result);
-      var nome = nomeDoArquivo(arquivo);
+    var nome = nomeDoArquivo(arquivo);
+    avisar('Abrindo o arquivo...');
+
+    bytesDoArquivo(arquivo).then(function (bytes) {
+      limparAviso();
       var comeco = Extrato.textoDeBytes(bytes.subarray(0, 2048));
 
       if (comeco.indexOf('%PDF') >= 0 || /\.pdf$/.test(nome)) {
@@ -11097,10 +11567,7 @@
       if ((bytes[0] === 0x50 && bytes[1] === 0x4B) || /\.xlsx?$/.test(nome)) {
         avisar('Lendo a planilha...');
         Extrato.lerXlsx(bytes).then(function (linhas) {
-          if (!linhas || !linhas.length) {
-            mostrarExtrato(null, arquivo, 'planilha');
-            return;
-          }
+          if (!linhas || !linhas.length) { mostrarExtrato(null, arquivo, 'planilha'); return; }
           mostrarExtrato(Extrato.lerTabela(linhas, nome), arquivo, '');
         }, function () { mostrarExtrato(null, arquivo, 'planilha'); });
         return;
@@ -11116,8 +11583,10 @@
       if (/<OFX|OFXHEADER|<STMTTRN>/i.test(comeco + texto.slice(0, 4000))) lido = Extrato.lerOfx(texto, nome);
       else lido = Extrato.lerCsv(texto, nome);
       mostrarExtrato(lido, arquivo, lido.itens.length ? '' : 'csv');
-    };
-    leitor.readAsArrayBuffer(arquivo);
+    }, function (e) {
+      limparAviso();
+      avisarCaixa('Não deu para abrir', recadoDeLeitura(e), function () {});
+    });
   }
 
   function tentarPdf(bytes, senha, arquivo) {

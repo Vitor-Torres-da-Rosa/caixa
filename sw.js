@@ -1,4 +1,4 @@
-const VERSAO = '3.8.0';
+const VERSAO = '3.9.0';
 const CACHE = 'caixa-v' + VERSAO;
 
 const ESSENCIAIS = [
